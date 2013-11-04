@@ -1,11 +1,15 @@
-PHP Markdown Lib  
-Copyright (c) 2004-2013 Michel Fortin  
-<http://michelf.ca/>  
+PHP Markdown Next
+Copyright (c) 2013 Nazar Mokrynskyi <nazar@mokrynskyi.com>
 All rights reserved.
 
-Based on Markdown  
-Copyright (c) 2003-2006 John Gruber   
-<http://daringfireball.net/>   
+PHP Markdown Lib
+Copyright (c) 2004-2013 Michel Fortin
+<http://michelf.ca/>
+All rights reserved.
+
+Based on Markdown
+Copyright (c) 2003-2006 John Gruber
+<http://daringfireball.net/>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
