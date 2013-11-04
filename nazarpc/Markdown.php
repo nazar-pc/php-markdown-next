@@ -72,7 +72,7 @@ class Markdown {
 	 * Change to ">" for HTML output.
 	 * @var string
 	 */
-	public $empty_element_suffix = " />";
+	public $empty_element_suffix = ">";
 	/**
 	 * The width of indentation of the output markup.
 	 *
@@ -152,6 +152,7 @@ class Markdown {
 	# Table of hash values for escaped characters:
 	protected $escape_chars = '\`*_{}[]()>#+-.!';
 	protected $escape_chars_re;
+	protected $ref_attr = array();
 
 
 	/**
@@ -171,7 +172,7 @@ class Markdown {
 
 		$this->escape_chars_re = '['.preg_quote($this->escape_chars).']';
 
-		// Sort document, block, and span gamut in ascendent priority order.
+		// Sort document, block, and span gamut in ascendant priority order.
 		asort($this->document_gamut);
 		asort($this->block_gamut);
 		asort($this->span_gamut);
@@ -203,7 +204,7 @@ class Markdown {
 	protected function teardown() {
 	#
 	# Called after the transformation process to clear any variable
-	# which may be taking up memory unnecessarly.
+	# which may be taking up memory unnecessarily.
 	#
 		$this->urls = array();
 		$this->titles = array();
@@ -572,14 +573,17 @@ class Markdown {
 		"doHardBreaks"        =>  60,
 		);
 
+	/**
+	 * Run span gamut transformations
+	 *
+	 * @param string	$text
+	 *
+	 * @return string
+	 */
 	protected function runSpanGamut($text) {
-	#
-	# Run span gamut tranformations.
-	#
 		foreach ($this->span_gamut as $method => $priority) {
 			$text = $this->$method($text);
 		}
-
 		return $text;
 	}
 
@@ -589,7 +593,7 @@ class Markdown {
 		return preg_replace_callback('/ {2,}\n/',
 			array(&$this, '_doHardBreaks_callback'), $text);
 	}
-	protected function _doHardBreaks_callback($matches) {
+	protected function _doHardBreaks_callback() {
 		return $this->hashPart("<br$this->empty_element_suffix\n");
 	}
 
@@ -699,7 +703,6 @@ class Markdown {
 		return $result;
 	}
 	protected function _doAnchors_inline_callback($matches) {
-		$whole_match	=  $matches[1];
 		$link_text		=  $this->runSpanGamut($matches[2]);
 		$url			=  $matches[3] == '' ? $matches[4] : $matches[3];
 		$title			=& $matches[7];
@@ -803,7 +806,6 @@ class Markdown {
 		return $result;
 	}
 	protected function _doImages_inline_callback($matches) {
-		$whole_match	= $matches[1];
 		$alt_text		= $matches[2];
 		$url			= $matches[3] == '' ? $matches[4] : $matches[3];
 		$title			=& $matches[7];
@@ -876,7 +878,6 @@ class Markdown {
 		# Re-usable patterns to match list item bullets and number markers:
 		$marker_ul_re  = '[*+-]';
 		$marker_ol_re  = '\d+[\.]';
-		$marker_any_re = "(?:$marker_ul_re|$marker_ol_re)";
 
 		$markers_relist = array(
 			$marker_ul_re => $marker_ol_re,
@@ -937,7 +938,6 @@ class Markdown {
 		# Re-usable patterns to match list item bullets and number markers:
 		$marker_ul_re  = '[*+-]';
 		$marker_ol_re  = '\d+[\.]';
-		$marker_any_re = "(?:$marker_ul_re|$marker_ol_re)";
 
 		$list = $matches[1];
 		$list_type = preg_match("/$marker_ul_re/", $matches[4]) ? "ul" : "ol";
@@ -1810,7 +1810,7 @@ class _MarkdownExtra_TmpImpl extends Markdown {
 	# Expression to use when parsing in a context when no capture is desired
 	protected $id_class_attr_nocatch_re = '\{(?:[ ]*[#.][-_:a-zA-Z0-9]+){1,}[ ]*\}';
 
-	protected function doExtraAttributes($tag_name, $attr) {
+	protected function doExtraAttributes($attr) {
 	#
 	# Parse attributes caught by the $this->id_class_attr_catch_re expression
 	# and return the HTML-formatted list of attributes.
@@ -1886,7 +1886,7 @@ class _MarkdownExtra_TmpImpl extends Markdown {
 		$url = $matches[2] == '' ? $matches[3] : $matches[2];
 		$this->urls[$link_id] = $url;
 		$this->titles[$link_id] =& $matches[4];
-		$this->ref_attr[$link_id] = $this->doExtraAttributes("", $dummy =& $matches[5]);
+		$this->ref_attr[$link_id] = $this->doExtraAttributes($dummy =& $matches[5]);
 		return ''; # String that will replace the block
 	}
 
@@ -2063,7 +2063,6 @@ class _MarkdownExtra_TmpImpl extends Markdown {
 
 			$tag  = $parts[1]; # Tag to handle.
 			$text = $parts[2]; # Remaining text after current tag.
-			$tag_re = preg_quote($tag); # For use in a regular expression.
 
 			#
 			# Check for: Code span marker
@@ -2235,8 +2234,9 @@ class _MarkdownExtra_TmpImpl extends Markdown {
 		# Get the name of the starting tag.
 		# (This pattern makes $base_tag_name_re safe without quoting.)
 		#
-		if (preg_match('/^<([\w:$]*)\b/', $text, $matches))
+		if (preg_match('/^<([\w:$]*)\b/', $text, $matches)) {
 			$base_tag_name_re = $matches[1];
+		}
 
 		#
 		# Loop through every tag until we find the corresponding closing tag.
@@ -2279,7 +2279,7 @@ class _MarkdownExtra_TmpImpl extends Markdown {
 				# Increase/decrease nested tag count. Only do so if
 				# the tag's name match base tag's.
 				#
-				if (preg_match('{^</?'.$base_tag_name_re.'\b}', $tag)) {
+				if (isset($base_tag_name_re) && preg_match('{^</?'.$base_tag_name_re.'\b}', $tag)) {
 					if ($tag{1} == '/')						$depth--;
 					else if ($tag{strlen($tag)-2} != '/')	$depth++;
 				}
@@ -2295,8 +2295,8 @@ class _MarkdownExtra_TmpImpl extends Markdown {
 					$tag = preg_replace($markdown_attr_re, '', $tag);
 
 					# Check if text inside this tag must be parsed in span mode.
-					$this->mode = $attr_m[2] . $attr_m[3];
-					$span_mode = $this->mode == 'span' || $this->mode != 'block' &&
+					$mode = $attr_m[2] . $attr_m[3];
+					$span_mode = $mode == 'span' || $mode != 'block' &&
 						preg_match('{^<(?:'.$this->contain_span_tags_re.')\b}', $tag);
 
 					# Calculate indent before tag.
@@ -2351,7 +2351,7 @@ class _MarkdownExtra_TmpImpl extends Markdown {
 	protected function hashClean($text) {
 	#
 	# Called whenever a tag must be hashed when a function inserts a "clean" tag
-	# in $text, it passes through this function and is automaticaly escaped,
+	# in $text, it passes through this function and is automatically escaped,
 	# blocking invalid nested overlap.
 	#
 		return $this->hashPart($text, 'C');
@@ -2478,11 +2478,10 @@ class _MarkdownExtra_TmpImpl extends Markdown {
 		return $result;
 	}
 	protected function _doAnchors_inline_callback($matches) {
-		$whole_match	=  $matches[1];
 		$link_text		=  $this->runSpanGamut($matches[2]);
 		$url			=  $matches[3] == '' ? $matches[4] : $matches[3];
 		$title			=& $matches[7];
-		$attr  = $this->doExtraAttributes("a", $dummy =& $matches[8]);
+		$attr  = $this->doExtraAttributes($dummy =& $matches[8]);
 
 
 		$url = $this->encodeAttribute($url);
@@ -2588,11 +2587,10 @@ class _MarkdownExtra_TmpImpl extends Markdown {
 		return $result;
 	}
 	protected function _doImages_inline_callback($matches) {
-		$whole_match	= $matches[1];
 		$alt_text		= $matches[2];
 		$url			= $matches[3] == '' ? $matches[4] : $matches[3];
 		$title			=& $matches[7];
-		$attr  = $this->doExtraAttributes("img", $dummy =& $matches[8]);
+		$attr  = $this->doExtraAttributes($dummy =& $matches[8]);
 
 		$alt_text = $this->encodeAttribute($alt_text);
 		$url = $this->encodeAttribute($url);
@@ -2652,13 +2650,13 @@ class _MarkdownExtra_TmpImpl extends Markdown {
 		if ($matches[3] == '-' && preg_match('{^- }', $matches[1]))
 			return $matches[0];
 		$level = $matches[3]{0} == '=' ? 1 : 2;
-		$attr  = $this->doExtraAttributes("h$level", $dummy =& $matches[2]);
+		$attr  = $this->doExtraAttributes($dummy =& $matches[2]);
 		$block = "<h$level$attr>".$this->runSpanGamut($matches[1])."</h$level>";
 		return "\n" . $this->hashBlock($block) . "\n\n";
 	}
 	protected function _doHeaders_callback_atx($matches) {
 		$level = strlen($matches[1]);
-		$attr  = $this->doExtraAttributes("h$level", $dummy =& $matches[3]);
+		$attr  = $this->doExtraAttributes($dummy =& $matches[3]);
 		$block = "<h$level$attr>".$this->runSpanGamut($matches[2])."</h$level>";
 		return "\n" . $this->hashBlock($block) . "\n\n";
 	}
@@ -2753,8 +2751,9 @@ class _MarkdownExtra_TmpImpl extends Markdown {
 		$underline	= preg_replace('/[|] *$/m', '', $underline);
 		$content	= preg_replace('/[|] *$/m', '', $content);
 
-		# Reading alignement from header underline.
+		# Reading alignment from header underline.
 		$separators	= preg_split('/ *[|] */', $underline);
+		$attr		= array();
 		foreach ($separators as $n => $s) {
 			if (preg_match('/^ *-+: *$/', $s))
 				$attr[$n] = $this->_doTable_makeAlignAttr('right');
@@ -2941,8 +2940,6 @@ class _MarkdownExtra_TmpImpl extends Markdown {
 	# Code block
 	# ~~~
 	#
-		$less_than_tab = $this->tab_width;
-
 		$text = preg_replace_callback('{
 				(?:\n|\A)
 				# 1: Opening marker
@@ -2985,7 +2982,7 @@ class _MarkdownExtra_TmpImpl extends Markdown {
 				$classname = substr($classname, 1);
 			$attr_str = ' class="'.$this->code_class_prefix.$classname.'"';
 		} else {
-			$attr_str = $this->doExtraAttributes($this->code_attr_on_pre ? "pre" : "code", $attrs);
+			$attr_str = $this->doExtraAttributes($attrs);
 		}
 		$pre_attr_str  = $this->code_attr_on_pre ? $attr_str : '';
 		$code_attr_str = $this->code_attr_on_pre ? '' : $attr_str;
@@ -3147,9 +3144,9 @@ class _MarkdownExtra_TmpImpl extends Markdown {
 				$note_id = $this->encodeAttribute($note_id);
 
 				# Prepare backlink, multiple backlinks if multiple references
-				$backlink = "<a href=\"#fnref:$note_id\"$attr>&#8617;</a>";
+				$backlink = "<a href=\"#fnref:$note_id\" $attr>&#8617;</a>";
 				for ($ref_num = 2; $ref_num <= $ref_count; ++$ref_num) {
-					$backlink .= " <a href=\"#fnref$ref_num:$note_id\"$attr>&#8617;</a>";
+					$backlink .= " <a href=\"#fnref$ref_num:$note_id\" $attr>&#8617;</a>";
 				}
 				# Add backlink to last paragraph; create new paragraph if needed.
 				if (preg_match('{</p>$}', $footnote)) {
@@ -3274,7 +3271,6 @@ class _MarkdownExtra_TmpImpl extends Markdown {
 		# Re-usable patterns to match list item bullets and number markers:
 		$marker_ul_re  = '[*+-]';
 		$marker_ol_re  = '\d+[\.]';
-		$marker_any_re = "(?:$marker_ul_re|$marker_ol_re)";
 		$marker_ol_start_re = '[0-9]+';
 
 		$list = $matches[1];
