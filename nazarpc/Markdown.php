@@ -1709,19 +1709,6 @@ class _MarkdownExtra_TmpImpl extends Markdown {
 	 */
 	public $predef_abbr = array();
 
-	# Class attribute to toggle "enhanced ordered list" behaviour
-	# setting this to true will allow ordered lists to start from the index
-	# number that is defined first.  For example:
-	# 2. List item two
-	# 3. List item three
-	#
-	# becomes
-	# <ol start="2">
-	# <li>List item two</li>
-	# <li>List item three</li>
-	# </ol>
-	public $enhanced_ordered_list = false;
-
 	### Parser Implementation ###
 
 	/**
@@ -3282,14 +3269,23 @@ class _MarkdownExtra_TmpImpl extends Markdown {
 		$result = $this->processListItems($list, $marker_any_re);
 
 		$ol_start = 1;
-		if ($this->enhanced_ordered_list) {
-			# Get the start number for ordered list.
-			if ($list_type == 'ol') {
-				$ol_start_array = array();
-				$ol_start_check = preg_match("/$marker_ol_start_re/", $matches[4], $ol_start_array);
-				if ($ol_start_check){
-					$ol_start = $ol_start_array[0];
-				}
+		# Class attribute to toggle "enhanced ordered list" behaviour
+		# setting this to true will allow ordered lists to start from the index
+		# number that is defined first.  For example:
+		# 2. List item two
+		# 3. List item three
+		#
+		# becomes
+		# <ol start="2">
+		# <li>List item two</li>
+		# <li>List item three</li>
+		# </ol>
+		# Get the start number for ordered list.
+		if ($list_type == 'ol') {
+			$ol_start_array = array();
+			$ol_start_check = preg_match("/$marker_ol_start_re/", $matches[4], $ol_start_array);
+			if ($ol_start_check){
+				$ol_start = $ol_start_array[0];
 			}
 		}
 
