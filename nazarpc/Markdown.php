@@ -2430,6 +2430,7 @@ class _MarkdownExtra_TmpImpl extends Markdown {
 		return $text;
 	}
 	protected function _doAnchors_reference_callback($matches) {
+		$is_implicit = !isset($matches[3]);
 		$whole_match =  $matches[1];
 		$link_text   =  $matches[2];
 		$link_id     =& $matches[3];
@@ -2455,6 +2456,17 @@ class _MarkdownExtra_TmpImpl extends Markdown {
 			}
 			if (isset($this->ref_attr[$link_id]))
 				$result .= $this->ref_attr[$link_id];
+
+			$link_text = $this->runSpanGamut($link_text);
+			$result .= ">$link_text</a>";
+			$result = $this->hashPart($result);
+		}
+		elseif ($is_implicit) {
+			$url = $this->encodeAttribute($link_id);
+
+			$result = "<a href=\"$url\"";
+			$title = $this->encodeAttribute($link_id);
+			$result .=  " title=\"$title\"";
 
 			$link_text = $this->runSpanGamut($link_text);
 			$result .= ">$link_text</a>";
