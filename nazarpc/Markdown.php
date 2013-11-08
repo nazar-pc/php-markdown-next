@@ -253,7 +253,7 @@ class Markdown {
 		"runBasicBlockGamut"   => 30,
 	);
 	/**
-	 * Strips link definitions from text, stores the URLs and titles in hash references.
+	 * Strips link definitions from text, stores the URLs and titles in hash references
 	 *
 	 * @param $text
 	 *
@@ -276,7 +276,7 @@ class Markdown {
 				  \n?				# maybe one newline
 				  [ ]*
 				(?:
-					(?<=\s)			# lookbehind for whitespace
+					(?<=\s)			# look behind for whitespace
 					["(]
 					(.*?)			# title = $4
 					[")]
@@ -284,16 +284,15 @@ class Markdown {
 				)?	# title is optional
 				(?:\n+|\Z)
 			}xm',
-			array($this, '_stripLinkDefinitions_callback'),
+			function ($matches) {
+				$link_id				= strtolower($matches[1]);
+				$url					= $matches[2] == '' ? $matches[3] : $matches[2];
+				$this->urls[$link_id]	= $url;
+				$this->titles[$link_id] = &$matches[4];
+				return ''; // String that will replace the block
+			},
 			$text
 		);
-	}
-	protected function _stripLinkDefinitions_callback($matches) {
-		$link_id = strtolower($matches[1]);
-		$url = $matches[2] == '' ? $matches[3] : $matches[2];
-		$this->urls[$link_id] = $url;
-		$this->titles[$link_id] =& $matches[4];
-		return ''; # String that will replace the block
 	}
 	protected function hashHTMLBlocks($text) {
 		if ($this->no_markup) {
@@ -429,14 +428,12 @@ class Markdown {
 
 			)
 			)}Sxmi',
-			array($this, '_hashHTMLBlocks_callback'),
+			function ($matches) {
+				$key	= $this->hashBlock($matches[1]);
+				return "\n\n$key\n\n";
+			},
 			$text
 		);
-	}
-	protected function _hashHTMLBlocks_callback($matches) {
-		$text = $matches[1];
-		$key  = $this->hashBlock($text);
-		return "\n\n$key\n\n";
 	}
 	protected function hashPart($text, $boundary = 'X') {
 		#
@@ -574,12 +571,11 @@ class Markdown {
 	protected function doHardBreaks($text) {
 		return preg_replace_callback(
 			'/ {2,}\n/',
-			array($this, '_doHardBreaks_callback'),
+			function () {
+				return $this->hashPart("<br$this->empty_element_suffix\n");
+			},
 			$text
 		);
-	}
-	protected function _doHardBreaks_callback() {
-		return $this->hashPart("<br$this->empty_element_suffix\n");
 	}
 	/**
 	 * Turn Markdown link shortcuts into XHTML <a> tags.
@@ -662,45 +658,45 @@ class Markdown {
 		return $text;
 	}
 	protected function _doAnchors_reference_callback($matches) {
-		$whole_match = $matches[1];
-		$link_text   = $matches[2];
-		$link_id     = &$matches[3];
+		$whole_match	= $matches[1];
+		$link_text		= $matches[2];
+		$link_id		= &$matches[3];
 		if ($link_id == '') {
 			// for shortcut links like [this][] or [this].
 			$link_id = $link_text;
 		}
 		// lower-case and turn embedded newlines into spaces
-		$link_id = strtolower($link_id);
-		$link_id = preg_replace('{[ ]?\n}', ' ', $link_id);
+		$link_id		= strtolower($link_id);
+		$link_id		= preg_replace('{[ ]?\n}', ' ', $link_id);
 		if (isset($this->urls[$link_id])) {
-			$url = $this->urls[$link_id];
-			$url = $this->encodeAttribute($url);
-			$result = "<a href=\"$url\"";
+			$url		= $this->urls[$link_id];
+			$url		= $this->encodeAttribute($url);
+			$result		= "<a href=\"$url\"";
 			if ( isset( $this->titles[$link_id] ) ) {
-				$title = $this->titles[$link_id];
-				$title = $this->encodeAttribute($title);
-				$result .= " title=\"$title\"";
+				$title	= $this->titles[$link_id];
+				$title	= $this->encodeAttribute($title);
+				$result	.= " title=\"$title\"";
 			}
-			$link_text = $this->runSpanGamut($link_text);
-			$result .= ">$link_text</a>";
-			$result = $this->hashPart($result);
+			$link_text	= $this->runSpanGamut($link_text);
+			$result		.= ">$link_text</a>";
+			$result		= $this->hashPart($result);
 		} else {
-			$result = $whole_match;
+			$result		= $whole_match;
 		}
 		return $result;
 	}
 	protected function _doAnchors_inline_callback($matches) {
-		$link_text		=  $this->runSpanGamut($matches[2]);
-		$url			=  $matches[3] == '' ? $matches[4] : $matches[3];
-		$title			=& $matches[7];
-		$url = $this->encodeAttribute($url);
-		$result = "<a href=\"$url\"";
+		$link_text	= $this->runSpanGamut($matches[2]);
+		$url		= $matches[3] == '' ? $matches[4] : $matches[3];
+		$title		= &$matches[7];
+		$url		= $this->encodeAttribute($url);
+		$result		= "<a href=\"$url\"";
 		if (isset($title)) {
 			$title = $this->encodeAttribute($title);
 			$result .=  " title=\"$title\"";
 		}
-		$link_text = $this->runSpanGamut($link_text);
-		$result .= ">$link_text</a>";
+		$link_text	= $this->runSpanGamut($link_text);
+		$result		.= ">$link_text</a>";
 		return $this->hashPart($result);
 	}
 	/**
@@ -766,26 +762,26 @@ class Markdown {
 		);
 	}
 	protected function _doImages_reference_callback($matches) {
-		$whole_match = $matches[1];
-		$alt_text    = $matches[2];
-		$link_id     = strtolower($matches[3]);
+		$whole_match	= $matches[1];
+		$alt_text		= $matches[2];
+		$link_id		= strtolower($matches[3]);
 		if ($link_id == "") {
 			$link_id = strtolower($alt_text); # for shortcut links like ![this][].
 		}
-		$alt_text = $this->encodeAttribute($alt_text);
+		$alt_text		= $this->encodeAttribute($alt_text);
 		if (isset($this->urls[$link_id])) {
-			$url = $this->encodeAttribute($this->urls[$link_id]);
-			$result = "<img src=\"$url\" alt=\"$alt_text\"";
+			$url	= $this->encodeAttribute($this->urls[$link_id]);
+			$result	= "<img src=\"$url\" alt=\"$alt_text\"";
 			if (isset($this->titles[$link_id])) {
-				$title = $this->titles[$link_id];
-				$title = $this->encodeAttribute($title);
-				$result .=  " title=\"$title\"";
+				$title	= $this->titles[$link_id];
+				$title	= $this->encodeAttribute($title);
+				$result	.=  " title=\"$title\"";
 			}
-			$result .= $this->empty_element_suffix;
-			$result = $this->hashPart($result);
+			$result	.= $this->empty_element_suffix;
+			$result	= $this->hashPart($result);
 		} else {
-			# If there's no such link ID, leave intact:
-			$result = $whole_match;
+			// If there's no such link ID, leave intact:
+			$result	= $whole_match;
 		}
 		return $result;
 	}
@@ -826,7 +822,15 @@ class Markdown {
 		// Setext-style headers:
 		$text = preg_replace_callback(
 			'{ ^(.+?)[ ]*\n(=+|-+)[ ]*\n+ }mx',
-			array($this, '_doHeaders_callback_setext'),
+			function ($matches) {
+				// Terrible hack to check we haven't found an empty list item.
+				if ($matches[2] == '-' && preg_match('{^-(?: |$)}', $matches[1])) {
+					return $matches[0];
+				}
+				$level	= $matches[2]{0} == '=' ? 1 : 2;
+				$block	= "<h$level>".$this->runSpanGamut($matches[1])."</h$level>";
+				return "\n" . $this->hashBlock($block) . "\n\n";
+			},
 			$text
 		);
 		// atx-style headers
@@ -839,23 +843,13 @@ class Markdown {
 				\#*			# optional closing #\'s (not counted)
 				\n+
 			}xm',
-			array($this, '_doHeaders_callback_atx'),
+			function ($matches) {
+				$level	= strlen($matches[1]);
+				$block	= "<h$level>".$this->runSpanGamut($matches[2])."</h$level>";
+				return "\n" . $this->hashBlock($block) . "\n\n";
+			},
 			$text
 		);
-	}
-	protected function _doHeaders_callback_setext($matches) {
-		// Terrible hack to check we haven't found an empty list item.
-		if ($matches[2] == '-' && preg_match('{^-(?: |$)}', $matches[1])) {
-			return $matches[0];
-		}
-		$level = $matches[2]{0} == '=' ? 1 : 2;
-		$block = "<h$level>".$this->runSpanGamut($matches[1])."</h$level>";
-		return "\n" . $this->hashBlock($block) . "\n\n";
-	}
-	protected function _doHeaders_callback_atx($matches) {
-		$level = strlen($matches[1]);
-		$block = "<h$level>".$this->runSpanGamut($matches[2])."</h$level>";
-		return "\n" . $this->hashBlock($block) . "\n\n";
 	}
 	/**
 	 * Form HTML ordered (numbered) and unordered (bulleted) lists.
@@ -1566,12 +1560,13 @@ class Markdown {
 		if (function_exists($this->utf8_strlen)) {
 			return;
 		}
-		$this->utf8_strlen = create_function(
-			'$text',
-			'return preg_match_all(
-			"/[\\\\x00-\\\\xBF]|[\\\\xC0-\\\\xFF][\\\\x80-\\\\xBF]*/",
-			$text, $m);'
-		);
+		$this->utf8_strlen = function ($text) {
+			return preg_match_all(
+				"/[\\x00-\\xBF]|[\\xC0-\\xFF][\\x80-\\xBF]*/",
+				$text,
+				$m
+			);
+		};
 	}
 	/**
 	 * Swap back in all the tags hashed by _HashHTMLBlocks.
@@ -1583,12 +1578,11 @@ class Markdown {
 	protected function unhash($text) {
 		return preg_replace_callback(
 			'/(.)\x1A[0-9]+\1/',
-			array($this, '_unhash_callback'),
+			function ($matches) {
+				return $this->html_hashes[$matches[0]];
+			},
 			$text
 		);
-	}
-	protected function _unhash_callback($matches) {
-		return $this->html_hashes[$matches[0]];
 	}
 }
 /**
