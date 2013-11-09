@@ -283,7 +283,7 @@ class Markdown {
 			}xm',
 			function ($matches) {
 				$link_id				= strtolower($matches[1]);
-				$url					= $matches[2] == '' ? $matches[3] : $matches[2];
+				$url					= $matches[2] ?: $matches[3];
 				$this->urls[$link_id]	= $url;
 				$this->titles[$link_id] = &$matches[4];
 				return ''; // String that will replace the block
@@ -658,7 +658,7 @@ class Markdown {
 		$whole_match	= $matches[1];
 		$link_text		= $matches[2];
 		$link_id		= &$matches[3];
-		if ($link_id == '') {
+		if (empty($link_id)) {
 			// for shortcut links like [this][] or [this].
 			$link_id = $link_text;
 		}
@@ -684,7 +684,7 @@ class Markdown {
 	}
 	protected function _doAnchors_inline_callback($matches) {
 		$link_text	= $this->runSpanGamut($matches[2]);
-		$url		= $matches[3] == '' ? $matches[4] : $matches[3];
+		$url		= $matches[3] ?: $matches[4];
 		$title		= &$matches[7];
 		$url		= $this->encodeAttribute($url);
 		$result		= "<a href=\"$url\"";
@@ -723,7 +723,30 @@ class Markdown {
 
 			)
 			}xs',
-			array($this, '_doImages_reference_callback'),
+			function ($matches) {
+				$whole_match	= $matches[1];
+				$alt_text		= $matches[2];
+				$link_id		= strtolower($matches[3]);
+				if (empty($link_id)) {
+					$link_id = strtolower($alt_text); // for shortcut links like ![this][].
+				}
+				$alt_text		= $this->encodeAttribute($alt_text);
+				if (isset($this->urls[$link_id])) {
+					$url	= $this->encodeAttribute($this->urls[$link_id]);
+					$result	= "<img src=\"$url\" alt=\"$alt_text\"";
+					if (isset($this->titles[$link_id])) {
+						$title	= $this->titles[$link_id];
+						$title	= $this->encodeAttribute($title);
+						$result	.=  " title=\"$title\"";
+					}
+					$result	.= $this->empty_element_suffix;
+					$result	= $this->hashPart($result);
+				} else {
+					// If there's no such link ID, leave intact:
+					$result	= $whole_match;
+				}
+				return $result;
+			},
 			$text
 		);
 		/**
@@ -734,7 +757,7 @@ class Markdown {
 			'{
 			(				# wrap whole match in $1
 			  !\[
-				('.$this->nested_brackets_re.')		# alt text = $2
+				('.$this->nested_brackets_re.')				# alt text = $2
 			  \]
 			  \s?			# One optional whitespace character
 			  \(			# literal paren
@@ -754,47 +777,22 @@ class Markdown {
 			  \)
 			)
 			}xs',
-			array($this, '_doImages_inline_callback'),
+			function ($matches) {
+				$alt_text	= $matches[2];
+				$url		= $matches[3] ?: $matches[4];
+				$title		= &$matches[7];
+				$alt_text	= $this->encodeAttribute($alt_text);
+				$url		= $this->encodeAttribute($url);
+				$result		= "<img src=\"$url\" alt=\"$alt_text\"";
+				if (isset($title)) {
+					$title	= $this->encodeAttribute($title);
+					$result	.=  " title=\"$title\""; // $title already quoted
+				}
+				$result		.= $this->empty_element_suffix;
+				return $this->hashPart($result);
+			},
 			$text
 		);
-	}
-	protected function _doImages_reference_callback($matches) {
-		$whole_match	= $matches[1];
-		$alt_text		= $matches[2];
-		$link_id		= strtolower($matches[3]);
-		if ($link_id == "") {
-			$link_id = strtolower($alt_text); # for shortcut links like ![this][].
-		}
-		$alt_text		= $this->encodeAttribute($alt_text);
-		if (isset($this->urls[$link_id])) {
-			$url	= $this->encodeAttribute($this->urls[$link_id]);
-			$result	= "<img src=\"$url\" alt=\"$alt_text\"";
-			if (isset($this->titles[$link_id])) {
-				$title	= $this->titles[$link_id];
-				$title	= $this->encodeAttribute($title);
-				$result	.=  " title=\"$title\"";
-			}
-			$result	.= $this->empty_element_suffix;
-			$result	= $this->hashPart($result);
-		} else {
-			// If there's no such link ID, leave intact:
-			$result	= $whole_match;
-		}
-		return $result;
-	}
-	protected function _doImages_inline_callback($matches) {
-		$alt_text		= $matches[2];
-		$url			= $matches[3] == '' ? $matches[4] : $matches[3];
-		$title			= &$matches[7];
-		$alt_text = $this->encodeAttribute($alt_text);
-		$url = $this->encodeAttribute($url);
-		$result = "<img src=\"$url\" alt=\"$alt_text\"";
-		if (isset($title)) {
-			$title = $this->encodeAttribute($title);
-			$result .=  " title=\"$title\""; // $title already quoted
-		}
-		$result .= $this->empty_element_suffix;
-		return $this->hashPart($result);
 	}
 	/**
 	 * Setext-style headers:
@@ -865,7 +863,7 @@ class Markdown {
 			$marker_ol_re => $marker_ul_re,
 		);
 		foreach ($markers_relist as $marker_re => $other_marker_re) {
-			# Re-usable pattern to match any entire ul or ol list:
+			// Re-usable pattern to match any entire ul or ol list:
 			$whole_list_re = '
 				(								# $1 = whole list
 				  (								# $2
@@ -879,12 +877,12 @@ class Markdown {
 					|
 					  \n{2,}
 					  (?=\S)
-					  (?!						# Negative lookahead for another list item marker
+					  (?!						# Negative look ahead for another list item marker
 						[ ]*
 						'.$marker_re.'[ ]+
 					  )
 					|
-					  (?=						# Lookahead for another kind of list
+					  (?=						# Look ahead for another kind of list
 					    \n
 						\3						# Must have the same indentation
 						'.$other_marker_re.'[ ]+
@@ -892,46 +890,36 @@ class Markdown {
 				  )
 				)
 			'; // mx
-			// We use a different prefix before nested lists than top-level lists.
-			// See extended comment in _ProcessListItems().
+			/**
+			 * We use a different prefix before nested lists than top-level lists.
+			 * See extended comment in ProcessListItems().
+			 */
 			if ($this->list_level) {
-				$text = preg_replace_callback(
-					'{
-						^
-						'.$whole_list_re.'
-					}mx',
-					array($this, '_doLists_callback'),
-					$text
-				);
+				$condition	= '^';
 			} else {
-				$text = preg_replace_callback(
-					'{
-						(?:(?<=\n)\n|\A\n?) # Must eat the newline
-						'.$whole_list_re.'
-					}mx',
-					array($this, '_doLists_callback'),
-					$text
-				);
+				$condition	= '(?:(?<=\n)\n|\A\n?) # Must eat the newline';
 			}
+			$text = preg_replace_callback(
+				"{
+					$condition
+					$whole_list_re
+				}mx",
+				function ($matches) {
+					# Re-usable patterns to match list item bullets and number markers:
+					$marker_ul_re	= '[*+-]';
+					$marker_ol_re	= '\d+[\.]';
+					$list			= "$matches[1]\n";
+					$list_type		= preg_match("/$marker_ul_re/", $matches[4]) ? 'ul' : 'ol';
+					$marker_any_re	= $list_type == 'ul' ? $marker_ul_re : $marker_ol_re;
+					$result			= $this->processListItems($list, $marker_any_re);
+					$result			= $this->hashBlock("<$list_type>\n$result</$list_type>");
+					return "\n$result\n\n";
+				},
+				$text
+			);
 		}
 
 		return $text;
-	}
-	protected function _doLists_callback($matches) {
-		# Re-usable patterns to match list item bullets and number markers:
-		$marker_ul_re  = '[*+-]';
-		$marker_ol_re  = '\d+[\.]';
-
-		$list = $matches[1];
-		$list_type = preg_match("/$marker_ul_re/", $matches[4]) ? "ul" : "ol";
-
-		$marker_any_re = ( $list_type == "ul" ? $marker_ul_re : $marker_ol_re );
-
-		$list .= "\n";
-		$result = $this->processListItems($list, $marker_any_re);
-
-		$result = $this->hashBlock("<$list_type>\n" . $result . "</$list_type>");
-		return "\n$result\n\n";
 	}
 	protected $list_level = 0;
 	/**
