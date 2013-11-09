@@ -685,8 +685,7 @@ class MarkdownExtra extends Markdown {
 
 					# Calculate indent before tag.
 					if (preg_match('/(?:^|\n)( *?)(?! ).*?$/', $block_text, $matches)) {
-						$strlen = $this->utf8_strlen;
-						$indent = $strlen($matches[1], 'UTF-8');
+						$indent = mb_strlen($matches[1], 'utf-8');
 					} else {
 						$indent = 0;
 					}
