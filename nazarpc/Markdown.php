@@ -1,25 +1,21 @@
 <?php
-#
-# Markdown  -  A text-to-HTML conversion tool for web writers
-#
-# PHP Markdown Next
-# Copyright (c) 2013 Nazar Mokrynskyi <nazar@mokrynskyi.com>
-#
-# PHP Markdown
-# Copyright (c) 2004-2013 Michel Fortin
-# <http://michelf.com/projects/php-markdown/>
-#
-# Original Markdown
-# Copyright (c) 2004-2006 John Gruber
-# <http://daringfireball.net/projects/markdown/>
-#
+/**
+ * Markdown - A text-to-HTML conversion tool for web writers
+ *
+ * PHP Markdown Next
+ * Copyright (c) 2013 Nazar Mokrynskyi <nazar@mokrynskyi.com>
+ *
+ * PHP Markdown
+ * Copyright (c) 2004-2013 Michel Fortin
+ * <http://michelf.com/projects/php-markdown/>
+ *
+ * Original Markdown
+ * Copyright (c) 2004-2006 John Gruber
+ * <http://daringfireball.net/projects/markdown/>
+ *
+ * @license http://michelf.ca/projects/php-markdown/#license
+ */
 namespace nazarpc;
-
-
-#
-# Markdown Parser Class
-#
-
 /**
  * Markdown Parser Class
  */
@@ -29,7 +25,7 @@ class Markdown {
 	 *
 	 * @var string
 	 */
-	const  MARKDOWNLIB_VERSION  =  "1.3";
+	const  MARKDOWNLIB_VERSION  =  '1.3';
 	/**
 	 * Initialize the parser and return the result of its transform method.
 	 *
@@ -41,7 +37,7 @@ class Markdown {
 	 *
 	 * @return string The transformed string in HTML.
 	 */
-	static function defaultTransform($text) {
+	static function defaultTransform ($text) {
 		static $parser_list;
 		// Try to take parser from the static parser list.
 		$parser			= &$parser_list[get_called_class()];
@@ -107,11 +103,11 @@ class Markdown {
 	/**
 	 * Predefined urls reference links and images.
 	 *
-	 * You can predefine reference links by setting <var>predef_urls</var> to a
+	 * You can predefine reference links by setting <var>predefined_urls</var> to a
 	 * list of urls where the key is the name of the reference. For instance:
 	 *
 	 * <code>
-	 * $parser->predef_urls = array('ref' => 'http://michelf.ca/');
+	 * $parser->predefined_urls = array('ref' => 'http://michelf.ca/');
 	 * </code>
 	 *
 	 * will make this Markdown input to create a link:
@@ -122,17 +118,17 @@ class Markdown {
 	 *
 	 * @var string[]
 	 */
-	public $predef_urls = array();
+	public $predefined_urls = array();
 	/**
 	 * Predefined titles reference links and images.
 	 *
-	 * Use <var>predef_titles</var> to set the title of the link references
-	 * passed in <var>predef_urls</var>. As for <var>predef_urls</var>, the key
+	 * Use <var>predefined_titles</var> to set the title of the link references
+	 * passed in <var>predefined_urls</var>. As for <var>predefined_urls</var>, the key
 	 * is the reference name.
 	 *
 	 * @var string[]
 	 */
-	public $predef_titles = array();
+	public $predefined_titles = array();
 	/**
 	 * Parser Implementation
 	 */
@@ -152,24 +148,20 @@ class Markdown {
 	 * @var string
 	 */
 	protected $escape_chars = '\`*_{}[]()>#+-.!';
-	protected $escape_chars_re;
+	protected $escape_chars_regexp;
 	protected $ref_attr = array();
 	/**
 	 * Initialize appropriate member variables.
 	 */
-	function __construct() {
+	function __construct () {
 		$this->prepareItalicsAndBold();
-
 		$this->nested_brackets_re =
 			str_repeat('(?>[^\[\]]+|\[', $this->nested_brackets_depth).
 			str_repeat('\])*', $this->nested_brackets_depth);
-
 		$this->nested_url_parenthesis_re =
 			str_repeat('(?>[^()\s]+|\(', $this->nested_url_parenthesis_depth).
 			str_repeat('(?>\)))*', $this->nested_url_parenthesis_depth);
-
-		$this->escape_chars_re = '['.preg_quote($this->escape_chars).']';
-
+		$this->escape_chars_regexp = '['.preg_quote($this->escape_chars).']';
 		// Sort document, block, and span gamut in ascendant priority order.
 		asort($this->document_gamut);
 		asort($this->block_gamut);
@@ -192,17 +184,17 @@ class Markdown {
 	/**
 	 * Called before the transformation process starts to setup parser states.
 	 */
-	protected function setup() {
+	protected function setup () {
 		// Clear global hashes.
-		$this->urls = $this->predef_urls;
-		$this->titles = $this->predef_titles;
+		$this->urls = $this->predefined_urls;
+		$this->titles = $this->predefined_titles;
 		$this->html_hashes = array();
 		$this->in_anchor = false;
 	}
 	/**
 	 * Called after the transformation process to clear any variable which may be taking up memory unnecessarily.
 	 */
-	protected function teardown() {
+	protected function teardown () {
 		$this->urls = array();
 		$this->titles = array();
 		$this->html_hashes = array();
@@ -219,12 +211,11 @@ class Markdown {
 	 *
 	 * @return string The transformed string in HTML.
 	 */
-	public function transform($text) {
+	function transform ($text) {
 		$this->setup();
 		// Remove UTF-8 BOM and marker character in input, if present.
 		$text = preg_replace('{^\xEF\xBB\xBF|\x1A}', '', $text);
-		// Standardize line endings:
-		// DOS to Unix and Mac to Unix
+		// Standardize line endings: DOS to Unix and Mac to Unix
 		$text = preg_replace('{\r\n?}', "\n", $text);
 		// Make sure $text ends with a couple of newlines:
 		$text .= "\n\n";
@@ -232,17 +223,17 @@ class Markdown {
 		$text = $this->detab($text);
 		// Turn block-level HTML blocks into hash entries
 		$text = $this->hashHTMLBlocks($text);
-		// Strip any lines consisting only of spaces and tabs.
-		// This makes subsequent regexen easier to write, because we can
-		// match consecutive blank lines with /\n+/ instead of something
-		// contorted like /[ ]*\n+/ .
+		/**
+		 * Strip any lines consisting only of spaces and tabs.
+		 * This makes subsequent regexen easier to write, because we can match consecutive blank lines with /\n+/ instead of something contorted like /[ ]*\n+/
+		 */
 		$text = preg_replace('/^[ ]+$/m', '', $text);
 		// Run document gamut methods.
 		foreach ($this->document_gamut as $method => $priority) {
 			$text = $this->$method($text);
 		}
 		$this->teardown();
-		return $text . "\n";
+		return "$text\n";
 	}
 	protected $document_gamut = array(
 		// Strip link definitions, store in hashes.
@@ -256,7 +247,7 @@ class Markdown {
 	 *
 	 * @return mixed
 	 */
-	protected function stripLinkDefinitions($text) {
+	protected function stripLinkDefinitions ($text) {
 		$less_than_tab = $this->tab_width - 1;
 		// Link defs are in the form: ^[id]: url "optional title"
 		return preg_replace_callback('{
@@ -291,7 +282,7 @@ class Markdown {
 			$text
 		);
 	}
-	protected function hashHTMLBlocks($text) {
+	protected function hashHTMLBlocks ($text) {
 		if ($this->no_markup) {
 			return $text;
 		}
@@ -432,7 +423,7 @@ class Markdown {
 			$text
 		);
 	}
-	protected function hashPart($text, $boundary = 'X') {
+	protected function hashPart ($text, $boundary = 'X') {
 		#
 		# Called whenever a tag must be hashed when a function insert an atomic
 		# element in the text stream. Passing $text to through this function gives
@@ -459,7 +450,7 @@ class Markdown {
 	 *
 	 * @return string
 	 */
-	protected function hashBlock($text) {
+	protected function hashBlock ($text) {
 		return $this->hashPart($text, 'B');
 	}
 	/**
@@ -485,7 +476,7 @@ class Markdown {
 	 *
 	 * @return string
 	 */
-	protected function runBlockGamut($text) {
+	protected function runBlockGamut ($text) {
 		return $this->runBasicBlockGamut(
 			$this->hashHTMLBlocks($text)
 		);
@@ -497,7 +488,7 @@ class Markdown {
 	 *
 	 * @return string
 	 */
-	protected function runBasicBlockGamut($text) {
+	protected function runBasicBlockGamut ($text) {
 		foreach ($this->block_gamut as $method => $priority) {
 			$text = $this->$method($text);
 		}
@@ -511,7 +502,7 @@ class Markdown {
 	 *
 	 * @return string
 	 */
-	protected function doHorizontalRules($text) {
+	protected function doHorizontalRules ($text) {
 		return preg_replace(
 			'{
 				^[ ]{0,3}	# Leading space
@@ -552,7 +543,7 @@ class Markdown {
 	 *
 	 * @return string
 	 */
-	protected function runSpanGamut($text) {
+	protected function runSpanGamut ($text) {
 		foreach ($this->span_gamut as $method => $priority) {
 			$text = $this->$method($text);
 		}
@@ -565,7 +556,7 @@ class Markdown {
 	 *
 	 * @return string
 	 */
-	protected function doHardBreaks($text) {
+	protected function doHardBreaks ($text) {
 		return preg_replace_callback(
 			'/ {2,}\n/',
 			function () {
@@ -581,7 +572,7 @@ class Markdown {
 	 *
 	 * @return string
 	 */
-	protected function doAnchors($text) {
+	protected function doAnchors ($text) {
 		if ($this->in_anchor) {
 			return $text;
 		}
@@ -654,7 +645,7 @@ class Markdown {
 		$this->in_anchor = false;
 		return $text;
 	}
-	protected function _doAnchors_reference_callback($matches) {
+	protected function _doAnchors_reference_callback ($matches) {
 		$whole_match	= $matches[1];
 		$link_text		= $matches[2];
 		$link_id		= &$matches[3];
@@ -682,7 +673,7 @@ class Markdown {
 		}
 		return $result;
 	}
-	protected function _doAnchors_inline_callback($matches) {
+	protected function _doAnchors_inline_callback ($matches) {
 		$link_text	= $this->runSpanGamut($matches[2]);
 		$url		= $matches[3] ?: $matches[4];
 		$title		= &$matches[7];
@@ -703,7 +694,7 @@ class Markdown {
 	 *
 	 * @return string
 	 */
-	protected function doImages($text) {
+	protected function doImages ($text) {
 		/**
 		 * First, handle reference-style labeled images: ![alt text][id]
 		 */
@@ -813,7 +804,7 @@ class Markdown {
 	 *
 	 * @return string
 	 */
-	protected function doHeaders($text) {
+	protected function doHeaders ($text) {
 		// Setext-style headers:
 		$text = preg_replace_callback(
 			'{ ^(.+?)[ ]*\n(=+|-+)[ ]*\n+ }mx',
@@ -853,7 +844,7 @@ class Markdown {
 	 *
 	 * @return string
 	 */
-	protected function doLists($text) {
+	protected function doLists ($text) {
 		$less_than_tab = $this->tab_width - 1;
 		// Re-usable patterns to match list item bullets and number markers:
 		$marker_ul_re  = '[*+-]';
@@ -930,7 +921,7 @@ class Markdown {
 	 *
 	 * @return string
 	 */
-	protected function processListItems($list_str, $marker_any_re) {
+	protected function processListItems ($list_str, $marker_any_re) {
 		# The $this->list_level global keeps track of when we're inside a list.
 		# Each time we enter a list, we increment it; when we leave a list,
 		# we decrement. If it's zero, we're not in a list anymore.
@@ -999,7 +990,7 @@ class Markdown {
 	 *
 	 * @return string
 	 */
-	protected function doCodeBlocks($text) {
+	protected function doCodeBlocks ($text) {
 		return preg_replace_callback(
 			'{
 				(?:\n\n|\A\n?)
@@ -1029,7 +1020,7 @@ class Markdown {
 	 *
 	 * @return string
 	 */
-	protected function makeCodeSpan($code) {
+	protected function makeCodeSpan ($code) {
 		$code = htmlspecialchars(trim($code), ENT_NOQUOTES);
 		return $this->hashPart("<code>$code</code>");
 	}
@@ -1052,7 +1043,7 @@ class Markdown {
 	/**
 	 * Prepare regular expressions for searching emphasis tokens in any context.
 	 */
-	protected function prepareItalicsAndBold() {
+	protected function prepareItalicsAndBold () {
 		foreach ($this->em_regexps as $em => $em_regexp) {
 			foreach ($this->strong_regexps as $strong => $strong_regexp) {
 				# Construct list of allowed token expressions.
@@ -1069,7 +1060,7 @@ class Markdown {
 			}
 		}
 	}
-	protected function doItalicsAndBold($text) {
+	protected function doItalicsAndBold ($text) {
 		$token_stack	= array('');
 		$text_stack		= array('');
 		$em				= '';
@@ -1183,7 +1174,7 @@ class Markdown {
 		}
 		return $text_stack[0];
 	}
-	protected function doBlockQuotes($text) {
+	protected function doBlockQuotes ($text) {
 		return preg_replace_callback(
 			'/
 			  (					# Wrap whole match in $1
@@ -1222,7 +1213,7 @@ class Markdown {
 	 *
 	 * @return string
 	 */
-	protected function formParagraphs($text) {
+	protected function formParagraphs ($text) {
 		# Strip leading and trailing lines:
 		$text = preg_replace('/\A\n+|\n+\z/', '', $text);
 		$grafs = preg_split('/\n{2,}/', $text, -1, PREG_SPLIT_NO_EMPTY);
@@ -1287,7 +1278,7 @@ class Markdown {
 	 *
 	 * @return string
 	 */
-	protected function encodeAttribute($text) {
+	protected function encodeAttribute ($text) {
 		return str_replace(
 			'"',
 			'&quot;',
@@ -1301,7 +1292,7 @@ class Markdown {
 	 *
 	 * @return string
 	 */
-	protected function encodeAmpsAndAngles($text) {
+	protected function encodeAmpsAndAngles ($text) {
 		if ($this->no_entities) {
 			$text = str_replace('&', '&amp;', $text);
 		} else {
@@ -1316,7 +1307,7 @@ class Markdown {
 		# Encode remaining <'s
 		return str_replace('<', '&lt;', $text);
 	}
-	protected function doAutoLinks($text) {
+	protected function doAutoLinks ($text) {
 		$text = preg_replace_callback(
 			'{<((https?|ftp|dict):[^\'">\s]+)>}i',
 			function ($matches) {
@@ -1366,7 +1357,7 @@ class Markdown {
 	 * 							&#x6d;">&#x66;o&#111;&#x40;&#101;&#x78;&#97;&#x6d;&#112;&#x6c;
 	 * 							&#101;&#46;&#x63;&#111;&#x6d;</a></p>
 	 */
-	protected function encodeEmailAddress($addr) {
+	protected function encodeEmailAddress ($addr) {
 		$addr	= "mailto:$addr";
 		$chars	= preg_split('/(?<!^)(?!$)/', $addr);
 		$seed	= (int)abs(crc32($addr) / strlen($addr)); // Deterministic seed.
@@ -1397,11 +1388,11 @@ class Markdown {
 	 *
 	 * @return string
 	 */
-	protected function parseSpan($str) {
+	protected function parseSpan ($str) {
 		$output		= '';
 		$span_re	= '{
 			(
-				\\\\'.$this->escape_chars_re.'
+				\\\\'.$this->escape_chars_regexp.'
 			|
 				(?<![`\\\\])
 				`+						# code span marker
@@ -1455,7 +1446,7 @@ class Markdown {
 	 *
 	 * @return string
 	 */
-	protected function handleSpanToken($token, &$str) {
+	protected function handleSpanToken ($token, &$str) {
 		switch ($token[0]) {
 			case "\\":
 				return $this->hashPart("&#". ord($token[1]). ";");
@@ -1483,7 +1474,7 @@ class Markdown {
 	 *
 	 * @return string
 	 */
-	protected function outdent($text) {
+	protected function outdent ($text) {
 		return preg_replace('/^(\t|[ ]{1,'.$this->tab_width.'})/m', '', $text);
 	}
 	/**
@@ -1493,7 +1484,7 @@ class Markdown {
 	 *
 	 * @return string
 	 */
-	protected function detab($text) {
+	protected function detab ($text) {
 		/**
 		 * For each line we separate the line in blocks delimited by tab characters.
 		 * Then we reconstruct every line by adding the appropriate number of space between each blocks.
@@ -1518,13 +1509,13 @@ class Markdown {
 		);
 	}
 	/**
-	 * Swap back in all the tags hashed by _HashHTMLBlocks.
+	 * Swap back in all the tags hashed by HashHTMLBlocks.
 	 *
 	 * @param string	$text
 	 *
 	 * @return string
 	 */
-	protected function unhash($text) {
+	protected function unhash ($text) {
 		return preg_replace_callback(
 			'/(.)\x1A[0-9]+\1/',
 			function ($matches) {
