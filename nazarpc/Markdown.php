@@ -951,50 +951,46 @@ class Markdown {
 		# without resorting to mind-reading. Perhaps the solution is to
 		# change the syntax rules such that sub-lists must start with a
 		# starting cardinal number; e.g. "1." or "a.".
-
 		$this->list_level++;
-
 		# trim trailing blank lines:
 		$list_str = preg_replace("/\n{2,}\\z/", "\n", $list_str);
-
 		$list_str = preg_replace_callback(
 			'{
-			(\n)?							# leading line = $1
-			(^[ ]*)							# leading whitespace = $2
-			('.$marker_any_re.'				# list marker and space = $3
-				(?:[ ]+|(?=\n))	# space only required if item is not empty
-			)
-			((?s:.*?))						# list item text   = $4
-			(?:(\n+(?=\n))|\n)				# tailing blank line = $5
-			(?= \n* (\z | \2 ('.$marker_any_re.') (?:[ ]+|(?=\n))))
+				(\n)?							# leading line = $1
+				(^[ ]*)							# leading whitespace = $2
+				('.$marker_any_re.'				# list marker and space = $3
+					(?:[ ]+|(?=\n))				# space only required if item is not empty
+				)
+				((?s:.*?))						# list item text   = $4
+				(?:(\n+(?=\n))|\n)				# tailing blank line = $5
+				(?= \n* (\z | \2 ('.$marker_any_re.') (?:[ ]+|(?=\n))))
 			}xm',
-			array($this, '_processListItems_callback'),
+			function ($matches) {
+				$item				= $matches[4];
+				$leading_line		= &$matches[1];
+				$leading_space		= &$matches[2];
+				$marker_space		= $matches[3];
+				$tailing_blank_line	= &$matches[5];
+				if (
+					$leading_line ||
+					$tailing_blank_line ||
+					preg_match('/\n{2,}/', $item)
+				) {
+					// Replace marker with the appropriate whitespace indentation
+					$item = $leading_space.str_repeat(' ', strlen($marker_space)).$item;
+					$item = $this->runBlockGamut($this->outdent($item)."\n");
+				} else {
+					// Recursion for sub-lists:
+					$item = $this->doLists($this->outdent($item));
+					$item = preg_replace('/\n+$/', '', $item);
+					$item = $this->runSpanGamut($item);
+				}
+				return "<li>$item</li>\n";
+			},
 			$list_str
 		);
 		$this->list_level--;
 		return $list_str;
-	}
-	protected function _processListItems_callback($matches) {
-		$item = $matches[4];
-		$leading_line = &$matches[1];
-		$leading_space = &$matches[2];
-		$marker_space = $matches[3];
-		$tailing_blank_line = &$matches[5];
-		if (
-			$leading_line ||
-			$tailing_blank_line ||
-			preg_match('/\n{2,}/', $item)
-		) {
-			# Replace marker with the appropriate whitespace indentation
-			$item = $leading_space . str_repeat(' ', strlen($marker_space)) . $item;
-			$item = $this->runBlockGamut($this->outdent($item)."\n");
-		} else {
-			# Recursion for sub-lists:
-			$item = $this->doLists($this->outdent($item));
-			$item = preg_replace('/\n+$/', '', $item);
-			$item = $this->runSpanGamut($item);
-		}
-		return "<li>$item</li>\n";
 	}
 	/**
 	 * Process Markdown `<pre><code>` blocks.
@@ -1007,29 +1003,24 @@ class Markdown {
 		return preg_replace_callback(
 			'{
 				(?:\n\n|\A\n?)
-				(	            # $1 = the code block -- one or more lines, starting with a space/tab
+				(										# $1 = the code block -- one or more lines, starting with a space/tab
 				  (?>
-					[ ]{'.$this->tab_width.'}  # Lines must start with a tab or a tab-width of spaces
+					[ ]{'.$this->tab_width.'}			# Lines must start with a tab or a tab-width of spaces
 					.*\n+
 				  )+
 				)
 				((?=^[ ]{0,'.$this->tab_width.'}\S)|\Z)	# Look ahead for non-space at line-start, or end of doc
 			}xm',
-			array($this, '_doCodeBlocks_callback'),
+			function ($matches) {
+				$code_block = $this->outdent($matches[1]);
+				$code_block = htmlspecialchars($code_block, ENT_NOQUOTES);
+				// trim leading newlines and trailing newlines
+				$code_block = preg_replace('/\A\n+|\n+\z/', '', $code_block);
+				$code_block = $this->hashBlock("<pre><code>$code_block\n</code></pre>");
+				return "\n\n$code_block\n\n";
+			},
 			$text
 		);
-	}
-	protected function _doCodeBlocks_callback($matches) {
-		$codeblock = $matches[1];
-
-		$codeblock = $this->outdent($codeblock);
-		$codeblock = htmlspecialchars($codeblock, ENT_NOQUOTES);
-
-		# trim leading newlines and trailing newlines
-		$codeblock = preg_replace('/\A\n+|\n+\z/', '', $codeblock);
-
-		$codeblock = "<pre><code>$codeblock\n</code></pre>";
-		return "\n\n".$this->hashBlock($codeblock)."\n\n";
 	}
 	/**
 	 * Create a code span markup for $code. Called from handleSpanToken.
@@ -1314,8 +1305,8 @@ class Markdown {
 		if ($this->no_entities) {
 			$text = str_replace('&', '&amp;', $text);
 		} else {
-			# Ampersand-encoding based entirely on Nat Irons's Amputator
-			# MT plugin: <http://bumppo.net/projects/amputator/>
+			// Ampersand-encoding based entirely on Nat Irons's Amputator
+			// MT plugin: <http://bumppo.net/projects/amputator/>
 			$text = preg_replace(
 				'/&(?!#?[xX]?(?:[0-9a-fA-F]+|\w+);)/',
 				'&amp;',
@@ -1328,44 +1319,44 @@ class Markdown {
 	protected function doAutoLinks($text) {
 		$text = preg_replace_callback(
 			'{<((https?|ftp|dict):[^\'">\s]+)>}i',
-			array($this, '_doAutoLinks_url_callback'),
+			function ($matches) {
+				$url	= $this->encodeAttribute($matches[1]);
+				return $this->hashPart("<a href=\"$url\">$url</a>");
+			},
 			$text
 		);
 		// Email addresses: <address@domain.foo>
 		return preg_replace_callback(
 			'{
-			<
-			(?:mailto:)?
-			(
-				(?:
-					[-!#$%&\'*+/=?^_`.{|}~\w\x80-\xFF]+
-				|
-					".*?"
+				<
+				(?:mailto:)?
+				(
+					(?:
+						[-!#$%&\'*+/=?^_`.{|}~\w\x80-\xFF]+
+					|
+						".*?"
+					)
+					\@
+					(?:
+						[-a-z0-9\x80-\xFF]+(\.[-a-z0-9\x80-\xFF]+)*\.[a-z]+
+					|
+						\[[\d.a-fA-F:]+\]	# IPv4 & IPv6
+					)
 				)
-				\@
-				(?:
-					[-a-z0-9\x80-\xFF]+(\.[-a-z0-9\x80-\xFF]+)*\.[a-z]+
-				|
-					\[[\d.a-fA-F:]+\]	# IPv4 & IPv6
-				)
-			)
-			>
+				>
 			}xi',
-			array($this, '_doAutoLinks_email_callback'),
+			function ($matches) {
+				$address	= $matches[1];
+				$link		= $this->encodeEmailAddress($address);
+				return $this->hashPart($link);
+			},
 			$text
 		);
 	}
-	protected function _doAutoLinks_url_callback($matches) {
-		$url = $this->encodeAttribute($matches[1]);
-		$link = "<a href=\"$url\">$url</a>";
-		return $this->hashPart($link);
-	}
-	protected function _doAutoLinks_email_callback($matches) {
-		$address = $matches[1];
-		$link = $this->encodeEmailAddress($address);
-		return $this->hashPart($link);
-	}
 	/**
+	 * Based by a filter by Matthew Wickline, posted to BBEdit-Talk.
+	 * With some optimizations by Milian Wolff.
+	 *
 	 * @param string	$addr	An email address, e.g. "foo@example.com"
 	 *
 	 * @return string			the email address as a mailto link, with each character of the address encoded as either a decimal or hex entity, in
@@ -1376,18 +1367,14 @@ class Markdown {
 	 * 							&#101;&#46;&#x63;&#111;&#x6d;</a></p>
 	 */
 	protected function encodeEmailAddress($addr) {
-		/**
-		 * Based by a filter by Matthew Wickline, posted to BBEdit-Talk.
-		 * With some optimizations by Milian Wolff.
-		 */
-		$addr = "mailto:$addr";
-		$chars = preg_split('/(?<!^)(?!$)/', $addr);
-		$seed = (int)abs(crc32($addr) / strlen($addr)); // Deterministic seed.
+		$addr	= "mailto:$addr";
+		$chars	= preg_split('/(?<!^)(?!$)/', $addr);
+		$seed	= (int)abs(crc32($addr) / strlen($addr)); // Deterministic seed.
 		foreach ($chars as $key => $char) {
 			$ord = ord($char);
 			// Ignore non-ascii chars.
 			if ($ord < 128) {
-				$r = ($seed * (1 + $key)) % 100; # Pseudo-random function.
+				$r = ($seed * (1 + $key)) % 100; // Pseudo-random function.
 				// roughly 10% raw, 45% hex, 45% dec
 				// '@' *must* be encoded. I insist.
 				if ($r > 90 && $char != '@') {
@@ -1395,13 +1382,12 @@ class Markdown {
 				} else if ($r < 45) {
 					$chars[$key] = '&#x'.dechex($ord).';';
 				} else {
-					$chars[$key] = '&#'.$ord.';';
+					$chars[$key] = "&#$ord;";
 				}
 			}
 		}
-
-		$addr = implode('', $chars);
-		$text = implode('', array_slice($chars, 7)); # text without `mailto:`
+		$addr	= implode('', $chars);
+		$text	= implode('', array_slice($chars, 7)); // text without `mailto:`
 		return "<a href=\"$addr\">$text</a>";
 	}
 	/**
@@ -1412,47 +1398,49 @@ class Markdown {
 	 * @return string
 	 */
 	protected function parseSpan($str) {
-		$output = '';
-		$span_re = '{
-				(
-					\\\\'.$this->escape_chars_re.'
-				|
-					(?<![`\\\\])
-					`+						# code span marker
-			'.( $this->no_markup ? '' : '
-				|
-					<!--    .*?     -->		# comment
-				|
-					<\?.*?\?> | <%.*?%>		# processing instruction
-				|
-					<[!$]?[-a-zA-Z0-9:_]+	# regular tags
-					(?>
-						\s
-						(?>[^"\'>]+|"[^"]*"|\'[^\']*\')*
-					)?
-					>
-				|
-					<[-a-zA-Z0-9:_]+\s*/> # xml-style empty tag
-				|
-					</[-a-zA-Z0-9:_]+\s*> # closing tag
-			').'
-				)
-				}xs';
+		$output		= '';
+		$span_re	= '{
+			(
+				\\\\'.$this->escape_chars_re.'
+			|
+				(?<![`\\\\])
+				`+						# code span marker
+			'.(
+				$this->no_markup ? '' : '
+					|
+						<!--    .*?     -->		# comment
+					|
+						<\?.*?\?> | <%.*?%>		# processing instruction
+					|
+						<[!$]?[-a-zA-Z0-9:_]+	# regular tags
+						(?>
+							\s
+							(?>[^"\'>]+|"[^"]*"|\'[^\']*\')*
+						)?
+						>
+					|
+						<[-a-zA-Z0-9:_]+\s*/> # xml-style empty tag
+					|
+						</[-a-zA-Z0-9:_]+\s*> # closing tag
+				'
+			).'
+			)
+		}xs';
 		while (1) {
 			/**
-			 * Each loop iteration seach for either the next tag, the next
-			 * openning code span marker, or the next escaped character.
+			 * Each loop iteration search for either the next tag, the next
+			 * opening code span marker, or the next escaped character.
 			 * Each token is then passed to handleSpanToken.
 			 */
-			$parts = preg_split($span_re, $str, 2, PREG_SPLIT_DELIM_CAPTURE);
+			$parts	= preg_split($span_re, $str, 2, PREG_SPLIT_DELIM_CAPTURE);
 			// Create token from text preceding tag.
 			if ($parts[0] != "") {
-				$output .= $parts[0];
+				$output	.= $parts[0];
 			}
 			// Check if we reach the end.
 			if (isset($parts[1])) {
-				$output .= $this->handleSpanToken($parts[1], $parts[2]);
-				$str = $parts[2];
+				$output	.= $this->handleSpanToken($parts[1], $parts[2]);
+				$str	= $parts[2];
 			} else {
 				break;
 			}
@@ -1468,21 +1456,22 @@ class Markdown {
 	 * @return string
 	 */
 	protected function handleSpanToken($token, &$str) {
-		switch ($token{0}) {
+		switch ($token[0]) {
 			case "\\":
-				return $this->hashPart("&#". ord($token{1}). ";");
-			case "`":
+				return $this->hashPart("&#". ord($token[1]). ";");
+			case '`':
 				// Search for end marker in remaining text.
 				if (preg_match(
 					'/^(.*?[^`])'.preg_quote($token).'(?!`)(.*)$/sm',
 					$str,
 					$matches
 				)) {
-					$str = $matches[2];
-					$codespan = $this->makeCodeSpan($matches[1]);
-					return $this->hashPart($codespan);
+					$str		= $matches[2];
+					$code_span	= $this->makeCodeSpan($matches[1]);
+					return $this->hashPart($code_span);
 				}
-				return $token; // return as text since no ending marker found.
+				// return as text since no ending marker found
+				return $token;
 			default:
 				return $this->hashPart($token);
 		}
@@ -1505,28 +1494,28 @@ class Markdown {
 	 * @return string
 	 */
 	protected function detab($text) {
-		# For each line we separate the line in blocks delimited by
-		# tab characters. Then we reconstruct every line by adding the
-		# appropriate number of space between each blocks.
+		/**
+		 * For each line we separate the line in blocks delimited by tab characters.
+		 * Then we reconstruct every line by adding the appropriate number of space between each blocks.
+		 */
 		return preg_replace_callback(
 			'/^.*\t.*$/m',
-			array($this, '_detab_callback'),
+			function ($matches) {
+				$line	= $matches[0];
+				// Split in blocks.
+				$blocks	= explode("\t", $line);
+				// Add each blocks to the line.
+				$line	= $blocks[0];
+				unset($blocks[0]); // Do not add first block twice.
+				foreach ($blocks as $block) {
+					// Calculate amount of space, insert spaces, insert block.
+					$amount	= $this->tab_width - mb_strlen($line, 'utf-8') % $this->tab_width;
+					$line	.= str_repeat(" ", $amount).$block;
+				}
+				return $line;
+			},
 			$text
 		);
-	}
-	protected function _detab_callback($matches) {
-		$line = $matches[0];
-		# Split in blocks.
-		$blocks = explode("\t", $line);
-		# Add each blocks to the line.
-		$line = $blocks[0];
-		unset($blocks[0]); # Do not add first block twice.
-		foreach ($blocks as $block) {
-			# Calculate amount of space, insert spaces, insert block.
-			$amount = $this->tab_width - mb_strlen($line, 'utf-8') % $this->tab_width;
-			$line .= str_repeat(" ", $amount) . $block;
-		}
-		return $line;
 	}
 	/**
 	 * Swap back in all the tags hashed by _HashHTMLBlocks.
