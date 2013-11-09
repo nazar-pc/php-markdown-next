@@ -43,13 +43,11 @@ class Markdown {
 	 */
 	static function defaultTransform($text) {
 		static $parser_list;
-		// Take parser class on which this function was called.
-		$parser_class	= get_called_class();
 		// Try to take parser from the static parser list.
-		$parser			= &$parser_list[$parser_class];
+		$parser			= &$parser_list[get_called_class()];
 		// Create the parser it not already set.
 		if (!$parser) {
-			$parser = new $parser_class;
+			$parser = new static;
 		}
 		// Transform text using parser.
 		return $parser->transform($text);
@@ -1027,7 +1025,7 @@ class Markdown {
 					.*\n+
 				  )+
 				)
-				((?=^[ ]{0,'.$this->tab_width.'}\S)|\Z)	# Lookahead for non-space at line-start, or end of doc
+				((?=^[ ]{0,'.$this->tab_width.'}\S)|\Z)	# Look ahead for non-space at line-start, or end of doc
 			}xm',
 			array($this, '_doCodeBlocks_callback'),
 			$text
@@ -1056,144 +1054,144 @@ class Markdown {
 		$code = htmlspecialchars(trim($code), ENT_NOQUOTES);
 		return $this->hashPart("<code>$code</code>");
 	}
-	protected $em_relist = array(
+	protected $em_regexps			= array(
 		''  => '(?:(?<!\*)\*(?!\*)|(?<!_)_(?!_))(?=\S|$)(?![\.,:;]\s)',
 		'*' => '(?<=\S|^)(?<!\*)\*(?!\*)',
 		'_' => '(?<=\S|^)(?<!_)_(?!_)',
 	);
-	protected $strong_relist = array(
+	protected $strong_regexps		= array(
 		''   => '(?:(?<!\*)\*\*(?!\*)|(?<!_)__(?!_))(?=\S|$)(?![\.,:;]\s)',
 		'**' => '(?<=\S|^)(?<!\*)\*\*(?!\*)',
 		'__' => '(?<=\S|^)(?<!_)__(?!_)',
 	);
-	protected $em_strong_relist = array(
+	protected $em_strong_regexps	= array(
 		''    => '(?:(?<!\*)\*\*\*(?!\*)|(?<!_)___(?!_))(?=\S|$)(?![\.,:;]\s)',
 		'***' => '(?<=\S|^)(?<!\*)\*\*\*(?!\*)',
 		'___' => '(?<=\S|^)(?<!_)___(?!_)',
 	);
-	protected $em_strong_prepared_relist;
+	protected $em_strong_prepared_regexps;
 	/**
 	 * Prepare regular expressions for searching emphasis tokens in any context.
 	 */
 	protected function prepareItalicsAndBold() {
-		foreach ($this->em_relist as $em => $em_re) {
-			foreach ($this->strong_relist as $strong => $strong_re) {
+		foreach ($this->em_regexps as $em => $em_regexp) {
+			foreach ($this->strong_regexps as $strong => $strong_regexp) {
 				# Construct list of allowed token expressions.
-				$token_relist = array();
-				if (isset($this->em_strong_relist["$em$strong"])) {
-					$token_relist[] = $this->em_strong_relist["$em$strong"];
+				$token_regexps		= array();
+				if (isset($this->em_strong_regexps[$em.$strong])) {
+					$token_regexps[]	= $this->em_strong_regexps["$em$strong"];
 				}
-				$token_relist[] = $em_re;
-				$token_relist[] = $strong_re;
+				$token_regexps[]	= $em_regexp;
+				$token_regexps[]	= $strong_regexp;
 
 				# Construct master expression from list.
-				$token_re = '{('. implode('|', $token_relist) .')}';
-				$this->em_strong_prepared_relist["$em$strong"] = $token_re;
+				$token_re			= '{('. implode('|', $token_regexps) .')}';
+				$this->em_strong_prepared_regexps[$em.$strong] = $token_re;
 			}
 		}
 	}
 	protected function doItalicsAndBold($text) {
-		$token_stack = array('');
-		$text_stack = array('');
-		$em = '';
-		$strong = '';
-		$tree_char_em = false;
+		$token_stack	= array('');
+		$text_stack		= array('');
+		$em				= '';
+		$strong			= '';
+		$tree_char_em	= false;
 		while (1) {
 			// Get prepared regular expression for searching emphasis tokens in current context.
-			$token_re = $this->em_strong_prepared_relist["$em$strong"];
+			$token_re		= $this->em_strong_prepared_regexps[$em.$strong];
 			/**
 			 * Each loop iteration search for the next emphasis token.
 			 * Each token is then passed to handleSpanToken.
 			 */
-			$parts = preg_split($token_re, $text, 2, PREG_SPLIT_DELIM_CAPTURE);
-			$text_stack[0] .= $parts[0];
-			$token = &$parts[1];
-			$text = &$parts[2];
+			$parts			= preg_split($token_re, $text, 2, PREG_SPLIT_DELIM_CAPTURE);
+			$text_stack[0]	.= $parts[0];
+			$token			= &$parts[1];
+			$text			= &$parts[2];
 			if (empty($token)) {
-				# Reached end of text span: empty stack without emitting.
-				# any more emphasis.
+				// Reached end of text span: empty stack without emitting any more emphasis
 				while ($token_stack[0]) {
 					$text_stack[1] .= array_shift($token_stack);
 					$text_stack[0] .= array_shift($text_stack);
 				}
 				break;
 			}
-			$token_len = strlen($token);
+			$token_len		= strlen($token);
 			if ($tree_char_em) {
-				# Reached closing marker while inside a three-char emphasis.
+				// Reached closing marker while inside a three-char emphasis.
 				if ($token_len == 3) {
-					# Three-char closing marker, close em and strong.
+					// Three-char closing marker, close em and strong.
 					array_shift($token_stack);
-					$span = array_shift($text_stack);
-					$span = $this->runSpanGamut($span);
-					$span = "<strong><em>$span</em></strong>";
-					$text_stack[0] .= $this->hashPart($span);
-					$em = '';
-					$strong = '';
+					$span			= array_shift($text_stack);
+					$span			= $this->runSpanGamut($span);
+					$span			= "<strong><em>$span</em></strong>";
+					$text_stack[0]	.= $this->hashPart($span);
+					$em				= '';
+					$strong			= '';
 				} else {
 					# Other closing marker: close one em or strong and
 					# change current token state to match the other
-					$token_stack[0] = str_repeat($token{0}, 3-$token_len);
-					$tag = $token_len == 2 ? "strong" : "em";
-					$span = $text_stack[0];
-					$span = $this->runSpanGamut($span);
-					$span = "<$tag>$span</$tag>";
-					$text_stack[0] = $this->hashPart($span);
-					$$tag = ''; # $$tag stands for $em or $strong
+					$token_stack[0]	= str_repeat($token{0}, 3 - $token_len);
+					$tag			= $token_len == 2 ? 'strong' : 'em';
+					$span			= $text_stack[0];
+					$span			= $this->runSpanGamut($span);
+					$span			= "<$tag>$span</$tag>";
+					$text_stack[0]	= $this->hashPart($span);
+					$$tag			= ''; # $$tag stands for $em or $strong
 				}
 				$tree_char_em = false;
 			} else if ($token_len == 3) {
 				if ($em) {
-					# Reached closing marker for both em and strong.
-					# Closing strong marker:
+					/**
+					 * Reached closing marker for both em and strong.
+					 * Closing strong marker:
+					 */
 					for ($i = 0; $i < 2; ++$i) {
-						$shifted_token = array_shift($token_stack);
-						$tag = strlen($shifted_token) == 2 ? "strong" : "em";
-						$span = array_shift($text_stack);
-						$span = $this->runSpanGamut($span);
-						$span = "<$tag>$span</$tag>";
-						$text_stack[0] .= $this->hashPart($span);
-						$$tag = ''; # $$tag stands for $em or $strong
+						$shifted_token	= array_shift($token_stack);
+						$tag			= strlen($shifted_token) == 2 ? "strong" : "em";
+						$span			= array_shift($text_stack);
+						$span			= $this->runSpanGamut($span);
+						$span			= "<$tag>$span</$tag>";
+						$text_stack[0]	.= $this->hashPart($span);
+						$$tag			= ''; # $$tag stands for $em or $strong
 					}
 				} else {
-					# Reached opening three-char emphasis marker. Push on token
-					# stack; will be handled by the special condition above.
-					$em = $token{0};
-					$strong = "$em$em";
+					// Reached opening three-char emphasis marker. Push on token stack; will be handled by the special condition above.
+					$em				= $token{0};
+					$strong			= $em.$em;
 					array_unshift($token_stack, $token);
 					array_unshift($text_stack, '');
-					$tree_char_em = true;
+					$tree_char_em	= true;
 				}
 			} else if ($token_len == 2) {
 				if ($strong) {
-					# Unwind any dangling emphasis marker:
+					// Unwind any dangling emphasis marker:
 					if (strlen($token_stack[0]) == 1) {
 						$text_stack[1] .= array_shift($token_stack);
 						$text_stack[0] .= array_shift($text_stack);
 					}
-					# Closing strong marker:
+					// Closing strong marker:
 					array_shift($token_stack);
-					$span = array_shift($text_stack);
-					$span = $this->runSpanGamut($span);
-					$span = "<strong>$span</strong>";
-					$text_stack[0] .= $this->hashPart($span);
-					$strong = '';
+					$span			= array_shift($text_stack);
+					$span			= $this->runSpanGamut($span);
+					$span			= "<strong>$span</strong>";
+					$text_stack[0]	.= $this->hashPart($span);
+					$strong			= '';
 				} else {
 					array_unshift($token_stack, $token);
 					array_unshift($text_stack, '');
 					$strong = $token;
 				}
 			} else {
-				# Here $token_len == 1
+				// Here $token_len == 1
 				if ($em) {
 					if (strlen($token_stack[0]) == 1) {
-						# Closing emphasis marker:
+						// Closing emphasis marker:
 						array_shift($token_stack);
-						$span = array_shift($text_stack);
-						$span = $this->runSpanGamut($span);
-						$span = "<em>$span</em>";
-						$text_stack[0] .= $this->hashPart($span);
-						$em = '';
+						$span			= array_shift($text_stack);
+						$span			= $this->runSpanGamut($span);
+						$span			= "<em>$span</em>";
+						$text_stack[0]	.= $this->hashPart($span);
+						$em				= '';
 					} else {
 						$text_stack[0] .= $token;
 					}
@@ -1209,37 +1207,36 @@ class Markdown {
 	protected function doBlockQuotes($text) {
 		return preg_replace_callback(
 			'/
-			  (								# Wrap whole match in $1
+			  (					# Wrap whole match in $1
 				(?>
-				  ^[ ]*>[ ]?			# ">" at the start of a line
-					.+\n					# rest of the first line
-				  (.+\n)*					# subsequent consecutive lines
-				  \n*						# blanks
+				  ^[ ]*>[ ]?	# ">" at the start of a line
+					.+\n		# rest of the first line
+				  (.+\n)*		# subsequent consecutive lines
+				  \n*			# blanks
 				)+
 			  )
 			/xm',
-			array($this, '_doBlockQuotes_callback'),
+			function ($matches) {
+				$bq = $matches[1];
+				// trim one level of quoting - trim whitespace-only lines
+				$bq = preg_replace('/^[ ]*>[ ]?|^[ ]+$/m', '', $bq);
+				// recurse
+				$bq = $this->runBlockGamut($bq);
+				$bq = preg_replace('/^/m', "  ", $bq);
+				// These leading spaces cause problem with <pre> content,
+				// so we need to fix that:
+				$bq = preg_replace_callback(
+					'{(\s*<pre>.+?</pre>)}sx',
+					function ($matches) {
+						return preg_replace('/^  /m', '', $matches[1]);
+					},
+					$bq
+				);
+				$bq = $this->hashBlock("<blockquote>\n$bq\n</blockquote>");
+				return "\n$bq\n\n";
+			},
 			$text
 		);
-	}
-	protected function _doBlockQuotes_callback($matches) {
-		$bq = $matches[1];
-		# trim one level of quoting - trim whitespace-only lines
-		$bq = preg_replace('/^[ ]*>[ ]?|^[ ]+$/m', '', $bq);
-		$bq = $this->runBlockGamut($bq);		# recurse
-
-		$bq = preg_replace('/^/m', "  ", $bq);
-		# These leading spaces cause problem with <pre> content,
-		# so we need to fix that:
-		$bq = preg_replace_callback(
-			'{(\s*<pre>.+?</pre>)}sx',
-			array($this, '_doBlockQuotes_callback2'),
-			$bq
-		);
-		return "\n". $this->hashBlock("<blockquote>\n$bq\n</blockquote>") . "\n\n";
-	}
-	protected function _doBlockQuotes_callback2($matches) {
-		return preg_replace('/^  /m', '', $matches[1]);
 	}
 	/**
 	 * @param string	$text	string to process with html <p> tags

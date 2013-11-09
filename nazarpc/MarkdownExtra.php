@@ -1383,21 +1383,21 @@ class MarkdownExtra extends Markdown {
 	# Redefining emphasis markers so that emphasis by underscore does not
 	# work in the middle of a word.
 	#
-	protected $em_relist = array(
+	protected $em_regexps = array(
 		''  => '(?:(?<!\*)\*(?!\*)|(?<![a-zA-Z0-9_])_(?!_))(?=\S|$)(?![\.,:;]\s)',
 		'*' => '(?<=\S|^)(?<!\*)\*(?!\*)',
 		'_' => '(?<=\S|^)(?<!_)_(?![a-zA-Z0-9_])',
-		);
-	protected $strong_relist = array(
+	);
+	protected $strong_regexps = array(
 		''   => '(?:(?<!\*)\*\*(?!\*)|(?<![a-zA-Z0-9_])__(?!_))(?=\S|$)(?![\.,:;]\s)',
 		'**' => '(?<=\S|^)(?<!\*)\*\*(?!\*)',
 		'__' => '(?<=\S|^)(?<!_)__(?![a-zA-Z0-9_])',
-		);
-	protected $em_strong_relist = array(
+	);
+	protected $em_strong_regexps = array(
 		''    => '(?:(?<!\*)\*\*\*(?!\*)|(?<![a-zA-Z0-9_])___(?!_))(?=\S|$)(?![\.,:;]\s)',
 		'***' => '(?<=\S|^)(?<!\*)\*\*\*(?!\*)',
 		'___' => '(?<=\S|^)(?<!_)___(?![a-zA-Z0-9_])',
-		);
+	);
 
 
 	protected function formParagraphs($text) {
