@@ -24,7 +24,7 @@ namespace nazarpc;
  */
 class MarkdownNext {
 	/**
-	 * Version
+	 * Version of original Markdown library, which is base for this Markdown Next library
 	 *
 	 * @var string
 	 */
