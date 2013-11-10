@@ -2,6 +2,10 @@ PHP Markdown Next
 Copyright (c) 2013 Nazar Mokrynskyi <nazar@mokrynskyi.com>
 All rights reserved.
 
+PHP Markdown Extra Extended
+Copyright (c) 2011-2013 Egil Hansen <egil@assimilated.dk>
+All rights reserved.
+
 PHP Markdown Lib
 Copyright (c) 2004-2013 Michel Fortin
 <http://michelf.ca/>

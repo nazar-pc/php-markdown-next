@@ -1,9 +1,12 @@
 <?php
 /**
- * Markdown - A text-to-HTML conversion tool for web writers
+ * Markdown Next - A text-to-HTML conversion tool for web writers
  *
  * PHP Markdown Next
  * Copyright (c) 2013 Nazar Mokrynskyi <nazar@mokrynskyi.com>
+ *
+ * PHP Markdown Extra Extended
+ * Copyright (c) 2011-2013 Egil Hansen <egil@assimilated.dk>
  *
  * PHP Markdown
  * Copyright (c) 2004-2013 Michel Fortin
@@ -916,9 +919,10 @@ class MarkdownNext {
 		'doLists'				=> 40,
 		'doCodeBlocks'			=> 50,
 		'doBlockQuotes'			=> 60,
-		"doFencedCodeBlocks"	=> 5,
-		"doTables"				=> 15,
-		"doDefLists"			=> 45
+		'doFencedCodeBlocks'	=> 5,
+		'doTables'				=> 15,
+		'doDefLists'			=> 45,
+		'doFencedFigures'		=> 7
 	);
 	/**
 	 * Run block gamut transformations.
@@ -982,13 +986,13 @@ class MarkdownNext {
 		// Process character escapes, code spans, and inline HTML in one shot.
 		"parseSpan"				=> -30,
 		// Process anchor and image tags. Images must come first, because ![foo][f] looks like an anchor.
-		"doImages"				=>  10,
-		"doAnchors"				=>  20,
+		"doImages"				=> 10,
+		"doAnchors"				=> 20,
 		// Make links out of things like `<http://example.com/>` Must come after doAnchors, because you can use < and > delimiters in inline links like [this](<url>).
-		"doAutoLinks"			=>  30,
-		"encodeAmpsAndAngles"	=>  40,
-		"doItalicsAndBold"		=>  50,
-		"doHardBreaks"			=>  60,
+		"doAutoLinks"			=> 30,
+		"encodeAmpsAndAngles"	=> 40,
+		"doItalicsAndBold"		=> 50,
+		"doHardBreaks"			=> 60,
 		"doFootnotes"			=> 5,
 		"doAbbreviations"		=> 70,
 	);
@@ -1014,7 +1018,7 @@ class MarkdownNext {
 	 */
 	protected function doHardBreaks ($text) {
 		return preg_replace_callback(
-			'/ {2,}\n/',
+			'/ *\n/',
 			function () {
 				return $this->hashPart("<br$this->empty_element_suffix\n");
 			},
@@ -2008,33 +2012,92 @@ class MarkdownNext {
 	protected function doBlockQuotes ($text) {
 		return preg_replace_callback(
 			'/
-			  (					# Wrap whole match in $1
 				(?>
-				  ^[ ]*>[ ]?	# ">" at the start of a line
-					.+\n		# rest of the first line
-				  (.+\n)*		# subsequent consecutive lines
-				  \n*			# blanks
+					^[ ]*>[ ]?				# ">" at the start of a line
+					(
+						?:\((.+?)\)			# Citation url in $1
+					)?						# Citation is optional
+					[ ]*					# Possible spaces after citation
+					(						# BlockQuote in $2, but without > sign
+						.+\n				# Rest of the first line
+						(?:.+\n)*			# Subsequent consecutive lines
+						\n*					# Blanks
+					)
 				)+
-			  )
 			/xm',
 			function ($matches) {
-				$bq = $matches[1];
-				// trim one level of quoting - trim whitespace-only lines
-				$bq = preg_replace('/^[ ]*>[ ]?|^[ ]+$/m', '', $bq);
+				$cite	= $matches[1];
+				$bq		= "> $matches[2]";
+				#// trim one level of quoting - trim whitespace-only lines
+				$bq		= preg_replace('/^[ ]*>[ ]?|^[ ]+$/m', '', $bq);
 				// recurse
-				$bq = $this->runBlockGamut($bq);
-				$bq = preg_replace('/^/m', "  ", $bq);
-				// These leading spaces cause problem with <pre> content,
-				// so we need to fix that:
-				$bq = preg_replace_callback(
+				$bq		= $this->runBlockGamut($bq);
+				$bq		= preg_replace('/^/m', "  ", $bq);
+				// These leading spaces cause problem with <pre> content, so we need to fix that:
+				$bq		= preg_replace_callback(
 					'{(\s*<pre>.+?</pre>)}sx',
 					function ($matches) {
 						return preg_replace('/^  /m', '', $matches[1]);
 					},
 					$bq
 				);
-				$bq = $this->hashBlock("<blockquote>\n$bq\n</blockquote>");
+				if ($cite) {
+					$cite	= " cite=\"$cite\"";
+				}
+				$bq = $this->hashBlock("<blockquote$cite>\n$bq\n</blockquote>");
 				return "\n$bq\n\n";
+			},
+			$text
+		);
+	}
+	/**
+	 * Support for figure and figcaption tags
+	 *
+	 * @param string	$text
+	 *
+	 * @return string
+	 */
+	function doFencedFigures($text){
+		return preg_replace_callback(
+			'{
+				(?:\n|\A)
+				# 1: Opening marker
+				(
+					={3,} # Marker: equal sign.
+				)
+
+				[ ]?(?:\[([^\]]+)\])?[ ]* \n # Whitespace and newline following marker.
+
+				# 3: Content
+				(
+					(?>
+						(?!\1 [ ]?(?:\[([^\]]+)\])?[ ]* \n)	# Not a closing marker.
+						.*\n+
+					)+
+				)
+				# Closing marker.
+				\1 [ ]?(?:\[([^\]]+)\])?[ ]* \n
+			}xm',
+			function ($matches) {
+				// get figcaption
+				$top_caption	= empty($matches[2]) ? null : $this->runBlockGamut($matches[2]);
+				$bottom_caption	= empty($matches[5]) ? null : $this->runBlockGamut($matches[5]);
+				$figure			= $matches[3];
+				// recurse
+				$figure			= $this->runBlockGamut($figure);
+				$figure			= preg_replace('/^/m', "  ", $figure);
+				// These leading spaces cause problem with <pre> content, so we need to fix that - reuse blockqoute code to handle this:
+				$figure			= preg_replace_callback(
+					'{(\s*<pre>.+?</pre>)}sx',
+					function ($matches) {
+						return preg_replace('/^  /m', '', $matches[1]);
+					},
+					$figure
+				);
+				$top_caption	= $top_caption ? "\n<figcaption>$top_caption</figcaption>" : '';
+				$bottom_caption	= $bottom_caption && !$top_caption ? "<figcaption>$bottom_caption</figcaption>" : '';
+				$figure			= $this->hashBlock("<figure>$top_caption\n$figure\n$bottom_caption</figure>");
+				return "\n$figure\n\n";
 			},
 			$text
 		);

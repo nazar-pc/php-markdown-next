@@ -12,6 +12,11 @@
 			"role"  : "Developer"
 		},
 		{
+			"name"  : "Egil Hansen",
+			"email" : "egil@assimilated.dk",
+			"role"  : "Developer"
+		},
+		{
 			"name"     : "Michel Fortin",
 			"email"    : "michel.fortin@michelf.ca",
 			"homepage" : "http://michelf.ca/",
