@@ -2014,8 +2014,8 @@ class MarkdownNext {
 			'/
 				(?>
 					^[ ]*>[ ]?				# ">" at the start of a line
-					(
-						?:\((.+?)\)			# Citation url in $1
+					(?:
+						\((.+?)\)			# Citation url in $1
 					)?						# Citation is optional
 					[ ]*					# Possible spaces after citation
 					(						# BlockQuote in $2, but without > sign
