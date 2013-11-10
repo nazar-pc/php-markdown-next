@@ -1,86 +1,67 @@
 PHP Markdown
 ============
 
-PHP Markdown Lib 1.3 - 11 Apr 2013
+PHP Markdown Next
 
-by Michel Fortin
+by Nazar Mokrynskyi
+<nazar@mokrynskyi.com>
+
+based on PHP Markdown Extra by Michel Fortin
 <http://michelf.ca/>
 
-based on Markdown by John Gruber
+with changes from PHP Markdown Extra Extended by Egil Hansen
+<egil@assimilated.dk>
+
+based on original Markdown by John Gruber
 <http://daringfireball.net/>
 
 
 Introduction
 ------------
 
-This is a library package that includes the PHP Markdown parser and its
-sibling PHP Markdown Extra which additional features.
+This is a library package that includes the PHP Markdown Next parser, which is based on PHP Markdown Extra and PHP Markdown Extra Extended parsers.
 
-Markdown is a text-to-HTML conversion tool for web writers. Markdown
-allows you to write using an easy-to-read, easy-to-write plain text
-format, then convert it to structurally valid XHTML (or HTML).
+Markdown is a text-to-HTML conversion tool for web writers.
+Markdown allows you to write using an easy-to-read, easy-to-write plain text format, then convert it to structurally valid XHTML (or HTML).
 
-"Markdown" is two things: a plain text markup syntax, and a software
-tool, written in Perl, that converts the plain text markup to HTML.
-PHP Markdown is a port to PHP of the original Markdown program by
-John Gruber.
+"Markdown" is two things: a plain text markup syntax, and a software tool, written in Perl, that converts the plain text markup to HTML.
+PHP Markdown is a port to PHP of the original Markdown program by John Gruber.
 
-Full documentation of Markdown's syntax is available on John's
-Markdown page: <http://daringfireball.net/projects/markdown/>
+Full documentation of Markdown's syntax is available on John's Markdown page: <http://daringfireball.net/projects/markdown/>
+PHP Markdown Extra syntax is described by Michel Fortin: <http://michelf.ca/projects/php-markdown/extra/>
+Changes in PHP Markdown Extra Extended are described in corresponding repository by Egil Hansen: <https://github.com/egil/php-markdown-extra-extended>
 
-
-Requirement
+Requirements
 -----------
 
-This library package requires PHP 5.3 or later.
-
-Note: The older plugin/library hybrid package for PHP Markdown and
-PHP Markdown Extra is still maintained and will work with PHP 4.0.5 and later.
-
-Before PHP 5.3.7, pcre.backtrack_limit defaults to 100 000, which is too small
-in many situations. You might need to set it to higher values. Later PHP
-releases defaults to 1 000 000, which is usually fine.
-
+This library package requires PHP 5.4 or later.
 
 Usage
 -----
 
-This library package is meant to be used with class autoloading. For autoloading
-to work, your project needs have setup a PSR-0-compatible autoloader. See the
-included Readme.php file for a minimal autoloader setup. (If you don't want to
-use autoloading you can do a classic `require_once` to manually include the
-files prior use instead.)
+In order to use this library, you can use composer:
 
-With class autoloading in place, putting the 'Michelf' folder in your
-include path should be enough for this to work:
+	{
+        "require": {
+            "nazar-pc/php-markdown-next": "*"
+        }
+    }
 
-	use \nazarpc\Markdown;
-	$my_html = Markdown::defaultTransform($my_text);
+Or include file `src/nazarpc/MarkdownNext.php` manually (see `example/index.php` file).
 
-Markdown Extra syntax is also available the same way:
+Then you can use class:
 
-	use \nazarpc\MarkdownExtra;
-	$my_html = MarkdownExtra::defaultTransform($my_text);
+	use nazarpc\MarkdownExtra;
+	$my_html = MarkdownNext::defaultTransform($my_text);
 
-If you wish to use PHP Markdown with another text filter function
-built to parse HTML, you should filter the text *after* the `transform`
-function call. This is an example with [PHP SmartyPants][psp]:
+Static method `defaultTransform` is used in example above, but if you want to customize default settings - you can create instance of `MarkdownNext` class:
 
-	use \nazarpc\Markdown, \nazarpc\SmartyPants;
-	$my_html = Markdown::defaultTransform($my_text);
-	$my_html = SmartyPants::defaultTransform($my_html);
-
-All these examples are using the static `defaultTransform` static function
-found inside the parser class. If you want to customize the parser
-configuration, you can also instantiate it directly and change some
-configuration variables:
-
-	use \nazarpc\MarkdownExtra;
-	$parser = new MarkdownExtra;
+	use nazarpc\MarkdownNext;
+	$parser = new MarkdownNext;
 	$parser->fn_id_prefix = "post22-";
 	$my_html = $parser->transform($my_text);
 
-To learn more, see the full list of [configuration variables].
+To learn more, see the full list of [MarkdownExtra configuration variables].
 
  [configuration variables]: http://michelf.ca/projects/php-markdown/configuration/
 
@@ -96,40 +77,41 @@ functions and their configuration variables. The public API is stable for
 a given major version number. It might get additions when the minor version
 number increments.
 
-**Protected members are not considered public API.** This is unconventional
-and deserves an explanation. Incrementing the major version number every time
-the underlying implementation of something changes is going to give
-nonessential version numbers for the vast majority of people who just use the
-parser.  Protected members are meant to create parser subclasses that behave in
-different ways. Very few people create parser subclasses. I don't want to
-discourage it by making everything private, but at the same time I can't
-guarantee any stable hook between versions if you use protected members.
+**Protected members are not considered public API.** This is unconventional and deserves an explanation.
+Incrementing the major version number every time the underlying implementation of something changes is going to give nonessential version numbers
+for the vast majority of people who just use the parser.
+Protected members are meant to create parser subclasses that behave in different ways. Very few people create parser subclasses.
+I don't want to discourage it by making everything private, but at the same time I can't guarantee any stable hook between versions if you use protected members.
 
-**Syntax changes** will increment the minor number for new features, and the
-patch number for small corrections. A *new feature* is something that needs a
-change in the syntax documentation. Note that since PHP Markdown Lib includes
-two parsers, a syntax change for either of them will increment the minor
-number. Also note that there is nothing perfectly backward-compatible with the
-Markdown syntax: all inputs are always valid, so new features always replace
-something that was previously legal, although generally nonsensical to do.
+**Syntax changes** will increment the minor number for new features, and the patch number for small corrections.
+A *new feature* is something that needs a change in the syntax documentation.
 
-
-Bugs
+Bugs and Contributions
 ----
 
-To file bug reports please send email to:
-<michel.fortin@michelf.ca>
+Reporting of issues and creating of pull requests are highly appreciated!
 
-Please include with your report: (1) the example input; (2) the output you
-expected; (3) the output PHP Markdown actually produced.
+Also feel free to contact me via email <nazar@mokrynskyi.com>
 
-If you have a problem where Markdown gives you an empty result, first check
-that the backtrack limit is not too low by running `php --info | grep pcre`.
-See Installation and Requirement above for details.
+Please include with your bug report: (1) the example of input; (2) the output you expected; (3) the output PHP Markdown Next actually produced.
 
-
-Version History
+Versions History
 ---------------
+
+PHP Markdown Next 1.0.0 (10 Nov 2013):
+
+This is first release of Next series.
+
+* Git version of PHP Markdown repository on 4 Nov 2013 was taken as the base
+* Code reformatted, some properties renamed, added proper PHPDoc sections so that IDE now can work with them
+* Several rejected pull requests of PHP Markdown Extra were added:
+ * GFM-Style Fenced Code Blocks by Jason Caldwell
+ * Enhanced ordered list by Matt Gorle
+ * Convert public member comments to PHPDoc format (partial work in this direction) by Mark Trapp
+* Added changes from PHP Markdown Extra Extended, which was based on old version of PHP Markdown Extra
+* Markdown and MarkdownExtra classes together with other changes merged into single class MarkdownNext
+* Some internal changes, like moving of protected methods to closures in callbacks, short array syntax usage, short ternary operators
+
 
 PHP Markdown Lib 1.3 (11 Apr 2013):
 
@@ -177,44 +159,6 @@ PHP Markdown Extra 1.2.6:
 Copyright and License
 ---------------------
 
-PHP Markdown Next
-Copyright (c) 2013 Nazar Mokrynskyi <nazar@mokrynskyi.com>
-All rights reserved.
+BSD 3-Clause License
 
-PHP Markdown Lib
-Copyright (c) 2004-2013 Michel Fortin
-<http://michelf.ca/>
-All rights reserved.
-
-Based on Markdown
-Copyright (c) 2003-2005 John Gruber
-<http://daringfireball.net/>
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-*   Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
-
-*   Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in the
-    documentation and/or other materials provided with the
-    distribution.
-
-*   Neither the name "Markdown" nor the names of its contributors may
-    be used to endorse or promote products derived from this software
-    without specific prior written permission.
-
-This software is provided by the copyright holders and contributors "as
-is" and any express or implied warranties, including, but not limited
-to, the implied warranties of merchantability and fitness for a
-particular purpose are disclaimed. In no event shall the copyright owner
-or contributors be liable for any direct, indirect, incidental, special,
-exemplary, or consequential damages (including, but not limited to,
-procurement of substitute goods or services; loss of use, data, or
-profits; or business interruption) however caused and on any theory of
-liability, whether in contract, strict liability, or tort (including
-negligence or otherwise) arising in any way out of the use of this
-software, even if advised of the possibility of such damage.
+See `license.md` file for details
