@@ -43,10 +43,13 @@ class MarkdownNext {
 	static function defaultTransform ($text) {
 		static $parser_list;
 		// Try to take parser from the static parser list.
+		/**
+		 * @var self $parser
+		 */
 		$parser			= &$parser_list[get_called_class()];
 		// Create the parser it not already set.
 		if (!$parser) {
-			$parser = new static;
+			$parser = new self;
 		}
 		// Transform text using parser.
 		return $parser->transform($text);
@@ -633,7 +636,7 @@ class MarkdownNext {
 			/**
 			 * Check for: Code span marker
 			 */
-			if ($tag[0] == "`") {
+			if ($tag[0] == '`' && $tag[1] !== '`') {
 				// Find corresponding end marker.
 				$tag_re = preg_quote($tag);
 				if (preg_match(
@@ -1818,7 +1821,6 @@ class MarkdownNext {
 					'.$this->id_class_attr_catch_re.' # 3: Extra attributes
 				)?
 				[ ]* \n # Whitespace and newline following marker.
-
 				# 4: Content
 				(
 					(?>
@@ -1826,7 +1828,6 @@ class MarkdownNext {
 						.*\n+
 					)+
 				)
-
 				# Closing marker.
 				\1 [ ]* \n
 			}xm',

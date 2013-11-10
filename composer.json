@@ -1,6 +1,6 @@
 {
 	"name"        : "nazar-pc/php-markdown-next",
-	"version"     : "2.0.1",
+	"version"     : "2.0.2",
 	"type"        : "library",
 	"description" : "PHP Markdown Next",
 	"homepage"    : "https://github.com/nazar-pc/php-markdown-next",
