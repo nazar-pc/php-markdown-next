@@ -51,7 +51,7 @@ Or include file `src/nazarpc/MarkdownNext.php` manually (see `example/index.php`
 
 Then you can use class:
 
-	use nazarpc\MarkdownExtra;
+	use nazarpc\MarkdownNext;
 	$my_html = MarkdownNext::defaultTransform($my_text);
 
 Static method `defaultTransform` is used in example above, but if you want to customize default settings - you can create instance of `MarkdownNext` class:
