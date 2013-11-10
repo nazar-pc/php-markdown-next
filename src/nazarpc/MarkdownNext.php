@@ -110,7 +110,7 @@ class MarkdownNext {
 	 * list of urls where the key is the name of the reference. For instance:
 	 *
 	 * <code>
-	 * $parser->predefined_urls = array('ref' => 'http://michelf.ca/');
+	 * $parser->predefined_urls = ['ref' => 'http://michelf.ca/'];
 	 * </code>
 	 *
 	 * will make this Markdown input to create a link:
@@ -121,7 +121,7 @@ class MarkdownNext {
 	 *
 	 * @var string[]
 	 */
-	public $predefined_urls = array();
+	public $predefined_urls = [];
 	/**
 	 * Predefined titles reference links and images.
 	 *
@@ -131,7 +131,7 @@ class MarkdownNext {
 	 *
 	 * @var string[]
 	 */
-	public $predefined_titles = array();
+	public $predefined_titles = [];
 	/**
 	 * Parser Implementation
 	 */
@@ -152,7 +152,7 @@ class MarkdownNext {
 	 */
 	protected $escape_chars = '\`*_{}[]()>#+-.!:|';
 	protected $escape_chars_regexp;
-	protected $ref_attr = array();
+	protected $ref_attr = [];
 	/**
 	 * Configuration Variables from Markdown Extra
 	 */
@@ -239,15 +239,15 @@ class MarkdownNext {
 	 *
 	 * @var string[]
 	 */
-	public $predefined_abbr = array();
+	public $predefined_abbr = [];
 	/**
 	 * Extra variables used during extra transformations
 	 */
-	protected $footnotes			= array();
-	protected $footnotes_ordered	= array();
-	protected $footnotes_ref_count	= array();
-	protected $footnotes_numbers	= array();
-	protected $abbr_descriptions	= array();
+	protected $footnotes			= [];
+	protected $footnotes_ordered	= [];
+	protected $footnotes_ref_count	= [];
+	protected $footnotes_numbers	= [];
+	protected $abbr_descriptions	= [];
 	protected $abbr_word_re			= '';
 	/**
 	 * Give the current footnote number
@@ -277,9 +277,9 @@ class MarkdownNext {
 	 *
 	 * @var array
 	 */
-	protected $urls = array();
-	protected $titles = array();
-	protected $html_hashes = array();
+	protected $urls = [];
+	protected $titles = [];
+	protected $html_hashes = [];
 	/**
 	 * Status flag to avoid invalid nesting.
 	 *
@@ -293,7 +293,7 @@ class MarkdownNext {
 		// Clear global hashes.
 		$this->urls					= $this->predefined_urls;
 		$this->titles				= $this->predefined_titles;
-		$this->html_hashes			= array();
+		$this->html_hashes			= [];
 		$this->in_anchor			= false;
 		/**
 		 * Extra
@@ -311,17 +311,17 @@ class MarkdownNext {
 	 * Called after the transformation process to clear any variable which may be taking up memory unnecessarily.
 	 */
 	protected function teardown () {
-		$this->urls					= array();
-		$this->titles				= array();
-		$this->html_hashes			= array();
+		$this->urls					= [];
+		$this->titles				= [];
+		$this->html_hashes			= [];
 		/**
 		 * Clearing Extra-specific variables.
 		 */
-		$this->footnotes			= array();
-		$this->footnotes_ordered	= array();
-		$this->footnotes_ref_count	= array();
-		$this->footnotes_numbers	= array();
-		$this->abbr_descriptions	= array();
+		$this->footnotes			= [];
+		$this->footnotes_ordered	= [];
+		$this->footnotes_ref_count	= [];
+		$this->footnotes_numbers	= [];
+		$this->abbr_descriptions	= [];
 		$this->abbr_word_re			= '';
 	}
 	/**
@@ -360,7 +360,7 @@ class MarkdownNext {
 		$this->teardown();
 		return "$text\n";
 	}
-	protected $document_gamut = array(
+	protected $document_gamut = [
 		// Strip link definitions, store in hashes.
 		"stripLinkDefinitions"	=> 20,
 		"runBasicBlockGamut"	=> 30,
@@ -368,7 +368,7 @@ class MarkdownNext {
 		"stripFootnotes"		=> 15,
 		"stripAbbreviations"	=> 25,
 		"appendFootnotes"		=> 50
-	);
+	];
 	/**
 	 * Extra Attribute Parser
 	 */
@@ -399,7 +399,7 @@ class MarkdownNext {
 		preg_match_all('/[#.][-_:a-zA-Z0-9]+/', $attr, $matches);
 		$elements	= $matches[0];
 		// handle classes and ids (only first id taken into account)
-		$classes	= array();
+		$classes	= [];
 		$id			= false;
 		foreach ($elements as $element) {
 			if ($element[0] == '.') {
@@ -541,7 +541,7 @@ class MarkdownNext {
 	 */
 	protected function _hashHTMLBlocks_inMarkdown ($text, $indent = 0, $enclosing_tag_re = '', $span = false) {
 		if ($text === '') {
-			return array('', '');
+			return ['', ''];
 		}
 		// Regex to check for the presense of newlines around a block tag.
 		$newline_before_re	= '/(?:^\n?|\n\n)*$/';
@@ -725,7 +725,7 @@ class MarkdownNext {
 				$parsed .= $tag;
 			}
 		} while ($depth >= 0);
-		return array($parsed, $text);
+		return [$parsed, $text];
 	}
 	/**
 	 * Parse HTML, calling _hashHTMLBlocks_inMarkdown for block tags.
@@ -738,7 +738,7 @@ class MarkdownNext {
 	 */
 	protected function _hashHTMLBlocks_inHTML ($text, $hash_method, $md_attr) {
 		if ($text === '') {
-			return array('', '');
+			return ['', ''];
 		}
 		// Regex to match `markdown` attribute inside of a tag.
 		$markdown_attr_re = '
@@ -796,7 +796,7 @@ class MarkdownNext {
 				 * End of $text reached with unbalanced tag(s).
 				 * In that case, we return original text unchanged and pass the first character as filtered to prevent an infinite loop in the parent function.
 				 */
-				return array($original_text{0}, substr($original_text, 1));
+				return [$original_text{0}, substr($original_text, 1)];
 			}
 			$block_text	.= $parts[0];	// Text before current tag.
 			$tag		= $parts[1];	// Tag to handle.
@@ -865,7 +865,7 @@ class MarkdownNext {
 		} while ($depth > 0);
 		// Hash last block text that wasn't processed inside the loop.
 		$parsed	.= $this->$hash_method($block_text);
-		return array($parsed, $text);
+		return [$parsed, $text];
 	}
 	/**
 	 * Called whenever a tag must be hashed when a function inserts a "clean" tag in $text, it passes through this function and is automatically escaped,
@@ -913,7 +913,7 @@ class MarkdownNext {
 	 *
 	 * @var array
 	 */
-	protected $block_gamut = array(
+	protected $block_gamut = [
 		'doHeaders'				=> 10,
 		'doHorizontalRules'		=> 20,
 		'doLists'				=> 40,
@@ -923,7 +923,7 @@ class MarkdownNext {
 		'doTables'				=> 15,
 		'doDefLists'			=> 45,
 		'doFencedFigures'		=> 7
-	);
+	];
 	/**
 	 * Run block gamut transformations.
 	 *
@@ -982,20 +982,20 @@ class MarkdownNext {
 	 *
 	 * @var array
 	 */
-	protected $span_gamut = array(
+	protected $span_gamut = [
 		// Process character escapes, code spans, and inline HTML in one shot.
-		"parseSpan"				=> -30,
+		'parseSpan'				=> -30,
 		// Process anchor and image tags. Images must come first, because ![foo][f] looks like an anchor.
-		"doImages"				=> 10,
-		"doAnchors"				=> 20,
+		'doImages'				=> 10,
+		'doAnchors'				=> 20,
 		// Make links out of things like `<http://example.com/>` Must come after doAnchors, because you can use < and > delimiters in inline links like [this](<url>).
-		"doAutoLinks"			=> 30,
-		"encodeAmpsAndAngles"	=> 40,
-		"doItalicsAndBold"		=> 50,
-		"doHardBreaks"			=> 60,
-		"doFootnotes"			=> 5,
-		"doAbbreviations"		=> 70,
-	);
+		'doAutoLinks'			=> 30,
+		'encodeAmpsAndAngles'	=> 40,
+		'doItalicsAndBold'		=> 50,
+		'doHardBreaks'			=> 60,
+		'doFootnotes'			=> 5,
+		'doAbbreviations'		=> 70
+	];
 	/**
 	 * Run span gamut transformations
 	 *
@@ -1053,7 +1053,7 @@ class MarkdownNext {
 			  \]
 			)
 			}xs',
-			array($this, '_doAnchors_reference_callback'),
+			[$this, '_doAnchors_reference_callback'],
 			$text
 		);
 		//  Next, inline-style links: [link text](url "optional title")
@@ -1081,7 +1081,7 @@ class MarkdownNext {
 			  (?:[ ]? '.$this->id_class_attr_catch_re.' )?	 # $8 = id/class attributes
 			)
 			}xs',
-			array($this, '_doAnchors_inline_callback'),
+			[$this, '_doAnchors_inline_callback'],
 			$text
 		);
 		/**
@@ -1096,7 +1096,7 @@ class MarkdownNext {
 			  \]
 			)
 			}xs',
-			array($this, '_doAnchors_reference_callback'),
+			[$this, '_doAnchors_reference_callback'],
 			$text
 		);
 		$this->in_anchor = false;
@@ -1362,7 +1362,7 @@ class MarkdownNext {
 				$content	= $matches[3];
 				// Remove leading pipe for each row.
 				$content	= preg_replace('/^ *[|]/m', '', $content);
-				return $this->_doTable_callback(array($matches[0], $head, $underline, $content));
+				return $this->_doTable_callback([$matches[0], $head, $underline, $content]);
 			},
 			$text
 		);
@@ -1390,7 +1390,7 @@ class MarkdownNext {
 				)
 				(?=\n|\Z)					# Stop at final double newline.
 			}xm',
-			array($this, '_doTable_callback'),
+			[$this, '_doTable_callback'],
 			$text
 		);
 	}
@@ -1404,7 +1404,7 @@ class MarkdownNext {
 		$content	= preg_replace('/[|] *$/m', '', $content);
 		// Reading alignment from header underline.
 		$separators	= preg_split('/ *[|] */', $underline);
-		$attr		= array();
+		$attr		= [];
 		foreach ($separators as $n => $s) {
 			if (preg_match('/^ *-+: *$/', $s)) {
 				$attr[$n] = $this->_doTable_makeAlignAttr('right');
@@ -1464,10 +1464,10 @@ class MarkdownNext {
 		// Re-usable patterns to match list item bullets and number markers:
 		$marker_ul_re  = '[*+-]';
 		$marker_ol_re  = '\d+[\.]';
-		$markers_relist = array(
+		$markers_relist = [
 			$marker_ul_re => $marker_ol_re,
 			$marker_ol_re => $marker_ul_re,
-		);
+		];
 		foreach ($markers_relist as $marker_re => $other_marker_re) {
 			// Re-usable pattern to match any entire ul or ol list:
 			$whole_list_re = '
@@ -1538,7 +1538,7 @@ class MarkdownNext {
 					 * Get the start number for ordered list.
 					 */
 					if ($list_type == 'ol') {
-						$ol_start_array = array();
+						$ol_start_array = [];
 						$ol_start_check = preg_match("/$marker_ol_start_re/", $matches[4], $ol_start_array);
 						if ($ol_start_check){
 							$ol_start = $ol_start_array[0];
@@ -1859,21 +1859,21 @@ class MarkdownNext {
 		);
 	}
 	// Redefined emphasis markers so that emphasis by underscore does not work in the middle of a word
-	protected $em_regexps = array(
+	protected $em_regexps = [
 		''  => '(?:(?<!\*)\*(?!\*)|(?<![a-zA-Z0-9_])_(?!_))(?=\S|$)(?![\.,:;]\s)',
 		'*' => '(?<=\S|^)(?<!\*)\*(?!\*)',
 		'_' => '(?<=\S|^)(?<!_)_(?![a-zA-Z0-9_])',
-	);
-	protected $strong_regexps = array(
+	];
+	protected $strong_regexps = [
 		''   => '(?:(?<!\*)\*\*(?!\*)|(?<![a-zA-Z0-9_])__(?!_))(?=\S|$)(?![\.,:;]\s)',
 		'**' => '(?<=\S|^)(?<!\*)\*\*(?!\*)',
 		'__' => '(?<=\S|^)(?<!_)__(?![a-zA-Z0-9_])',
-	);
-	protected $em_strong_regexps = array(
+	];
+	protected $em_strong_regexps = [
 		''    => '(?:(?<!\*)\*\*\*(?!\*)|(?<![a-zA-Z0-9_])___(?!_))(?=\S|$)(?![\.,:;]\s)',
 		'***' => '(?<=\S|^)(?<!\*)\*\*\*(?!\*)',
 		'___' => '(?<=\S|^)(?<!_)___(?![a-zA-Z0-9_])',
-	);
+	];
 	protected $em_strong_prepared_regexps;
 	/**
 	 * Prepare regular expressions for searching emphasis tokens in any context.
@@ -1882,7 +1882,7 @@ class MarkdownNext {
 		foreach ($this->em_regexps as $em => $em_regexp) {
 			foreach ($this->strong_regexps as $strong => $strong_regexp) {
 				# Construct list of allowed token expressions.
-				$token_regexps		= array();
+				$token_regexps		= [];
 				if (isset($this->em_strong_regexps[$em.$strong])) {
 					$token_regexps[]	= $this->em_strong_regexps["$em$strong"];
 				}
@@ -1896,8 +1896,8 @@ class MarkdownNext {
 		}
 	}
 	protected function doItalicsAndBold ($text) {
-		$token_stack	= array('');
-		$text_stack		= array('');
+		$token_stack	= [''];
+		$text_stack		= [''];
 		$em				= '';
 		$strong			= '';
 		$tree_char_em	= false;
@@ -2191,7 +2191,7 @@ class MarkdownNext {
 	protected function appendFootnotes ($text) {
 		$text	= preg_replace_callback(
 			'{F\x1Afn:(.*?)\x1A:}',
-			array($this, '_appendFootnotes_callback'),
+			[$this, '_appendFootnotes_callback'],
 			$text
 		);
 		if (!empty($this->footnotes_ordered)) {
@@ -2224,7 +2224,7 @@ class MarkdownNext {
 				$footnote	= $this->runBlockGamut("$footnote\n");
 				$footnote	= preg_replace_callback(
 					'{F\x1Afn:(.*?)\x1A:}',
-					array($this, '_appendFootnotes_callback'),
+					[$this, '_appendFootnotes_callback'],
 					$footnote
 				);
 				$attr		= str_replace("%%", ++$num, $attr);
