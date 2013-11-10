@@ -98,7 +98,7 @@ Please include with your bug report: (1) the example of input; (2) the output yo
 Versions History
 ---------------
 
-PHP Markdown Next 1.0.0 (10 Nov 2013):
+PHP Markdown Next 2.0.0 (10 Nov 2013):
 
 This is first release of Next series.
 
