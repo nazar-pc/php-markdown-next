@@ -222,7 +222,7 @@ class MarkdownNext {
 	 * </code>
 	 * @var string
 	 */
-	public $code_class_prefix = "";
+	public $code_class_prefix = 'language-';
 	/**
 	 * Class attribute for code blocks goes on the <code><code></code> tag.
 	 *
