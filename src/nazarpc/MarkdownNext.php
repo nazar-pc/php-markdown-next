@@ -636,7 +636,7 @@ class MarkdownNext {
 			/**
 			 * Check for: Code span marker
 			 */
-			if ($tag[0] == '`' && $tag[1] !== '`') {
+			if ($tag[0] == '`' && (!isset($tag[1]) || $tag[1] !== '`')) {
 				// Find corresponding end marker.
 				$tag_re = preg_quote($tag);
 				if (preg_match(
