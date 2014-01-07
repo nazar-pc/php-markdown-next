@@ -1,6 +1,5 @@
 {
 	"name"        : "nazar-pc/php-markdown-next",
-	"version"     : "2.0.3",
 	"type"        : "library",
 	"description" : "PHP Markdown Next",
 	"homepage"    : "https://github.com/nazar-pc/php-markdown-next",
@@ -35,5 +34,10 @@
 		"psr-0" : {
 			"nazarpc" : "src/"
 		}
-	}
+	},
+	"extra": {
+		"branch-alias": {
+			"dev-develop": "2.0-dev"
+		}
+	},
 }
