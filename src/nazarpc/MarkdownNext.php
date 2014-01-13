@@ -40,7 +40,7 @@ class MarkdownNext {
 	 *
 	 * @return string The transformed string in HTML.
 	 */
-	static function defaultTransform ($text) {
+	public static function defaultTransform ($text) {
 		static $parser_list;
 		// Try to take parser from the static parser list.
 		/**
@@ -261,7 +261,7 @@ class MarkdownNext {
 	/**
 	 * Initialize appropriate member variables.
 	 */
-	function __construct () {
+	public function __construct () {
 		$this->prepareItalicsAndBold();
 		$this->nested_brackets_re			=
 			str_repeat('(?>[^\[\]]+|\[', $this->nested_brackets_depth).
@@ -339,7 +339,7 @@ class MarkdownNext {
 	 *
 	 * @return string The transformed string in HTML.
 	 */
-	function transform ($text) {
+	protected function transform ($text) {
 		$this->setup();
 		// Remove UTF-8 BOM and marker character in input, if present.
 		$text = preg_replace('{^\xEF\xBB\xBF|\x1A}', '', $text);
@@ -2058,7 +2058,7 @@ class MarkdownNext {
 	 *
 	 * @return string
 	 */
-	function doFencedFigures($text){
+	protected function doFencedFigures($text){
 		return preg_replace_callback(
 			'{
 				(?:\n|\A)
