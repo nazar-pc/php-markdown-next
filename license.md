@@ -1,5 +1,5 @@
 PHP Markdown Next
-Copyright (c) 2013 Nazar Mokrynskyi <nazar@mokrynskyi.com>
+Copyright (c) 2013-2014 Nazar Mokrynskyi <nazar@mokrynskyi.com>
 All rights reserved.
 
 PHP Markdown Extra Extended

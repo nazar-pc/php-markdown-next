@@ -3,7 +3,7 @@
  * Markdown Next - A text-to-HTML conversion tool for web writers
  *
  * PHP Markdown Next
- * Copyright (c) 2013 Nazar Mokrynskyi <nazar@mokrynskyi.com>
+ * Copyright (c) 2013-2014 Nazar Mokrynskyi <nazar@mokrynskyi.com>
  *
  * PHP Markdown Extra Extended
  * Copyright (c) 2011-2013 Egil Hansen <egil@assimilated.dk>
