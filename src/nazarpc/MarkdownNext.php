@@ -2058,7 +2058,7 @@ class MarkdownNext {
 	 *
 	 * @return string
 	 */
-	function doFencedFigures($text){
+	protected function doFencedFigures ($text) {
 		return preg_replace_callback(
 			'{
 				(?:\n|\A)
