@@ -61,10 +61,7 @@ Static method `defaultTransform` is used in example above, but if you want to cu
 	$parser->fn_id_prefix = "post22-";
 	$my_html = $parser->transform($my_text);
 
-To learn more, see the full list of [MarkdownExtra configuration variables].
-
- [configuration variables]: http://michelf.ca/projects/php-markdown/configuration/
-
+To learn more, see the full list of [Markdown Extra configuration variables](http://michelf.ca/projects/php-markdown/extra/) and [Markdown configuration variables](http://michelf.ca/projects/php-markdown/configuration/).
 
 Public API and Versioning Policy
 ---------------------------------
