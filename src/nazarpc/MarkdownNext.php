@@ -1552,7 +1552,7 @@ class MarkdownNext {
 					} else {
 						$result = $this->hashBlock("<$list_type>\n" . $result . "</$list_type>");
 					}
-					return "\n". $result ."\n\n";
+					return "$result\n\n";
 				},
 				$text
 			);

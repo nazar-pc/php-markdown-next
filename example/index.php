@@ -7,7 +7,7 @@ require __DIR__.'/../src/nazarpc/MarkdownNext.php';
 // Use MarkdownNext class
 use		nazarpc\MarkdownNext;
 // Read file and pass content through the Markdown parser
-$text	= file_get_contents('../Readme.md');
+$text	= file_get_contents('../readme.md');
 $html	= MarkdownNext::defaultTransform($text);
 ?><!DOCTYPE html>
 <html>
