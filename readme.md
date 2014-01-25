@@ -68,11 +68,9 @@ Public API and Versioning Policy
 
 Version numbers are of the form *major*.*minor*.*patch*.
 
-The public API of PHP Markdown consist of the two parser classes `Markdown`
-and `MarkdownExtra`, their constructors, the `transform` and `defaultTransform`
-functions and their configuration variables. The public API is stable for
-a given major version number. It might get additions when the minor version
-number increments.
+The public API of PHP Markdown Next consist of the parser class `MarkdownNext`, its constructor, the `transform` and `defaultTransform` methods and their
+configuration variables. The public API is stable for a given major version number.
+It might get additions when the minor version number increments.
 
 **Protected members are not considered public API.** This is unconventional and deserves an explanation.
 Incrementing the major version number every time the underlying implementation of something changes is going to give nonessential version numbers
