@@ -1115,7 +1115,6 @@ class MarkdownNext {
 			$link_id = $link_text;
 		}
 		// lower-case and turn embedded newlines into spaces
-		$link_id		= strtolower($link_id);
 		$link_id		= preg_replace('{[ ]?\n}', ' ', $link_id);
 		if (isset($this->urls[$link_id])) {
 			$url	= $this->urls[$link_id];
