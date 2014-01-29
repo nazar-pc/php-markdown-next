@@ -34,10 +34,5 @@
 		"psr-0" : {
 			"nazarpc" : "src/"
 		}
-	},
-	"extra": {
-		"branch-alias": {
-			"dev-master": "2.0-dev"
-		}
 	}
 }
